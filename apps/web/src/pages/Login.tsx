@@ -2,7 +2,7 @@ import { useState } from "react";
 import { api, ApiError } from "../api/client";
 import { useSession } from "../state/session";
 
-export function Login() {
+export function Login({ notice }: { notice?: string | null }) {
   const { setStaff } = useSession();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -26,6 +26,7 @@ export function Login() {
   return (
     <div style={{ maxWidth: 360, margin: "4rem auto", fontFamily: "sans-serif" }}>
       <h1>MatriSathi — Staff Login</h1>
+      {notice && <p role="status">{notice}</p>}
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: 12 }}>
           <label htmlFor="username">Username</label>

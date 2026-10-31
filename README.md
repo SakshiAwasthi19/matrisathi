@@ -75,6 +75,7 @@ Run from `apps/web`:
 
 ```
 npm run typecheck          # tsc --noEmit
+npm test                   # vitest: API client retry/idempotency/refresh
 npm run build              # typecheck + production bundle
 ```
 

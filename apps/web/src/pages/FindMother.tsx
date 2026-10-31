@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api, ApiError, type Person } from "../api/client";
 import { formatAge } from "../lib/age";
+import { attemptKey, clearAttempt, createAttemptStore } from "../lib/attempts";
 import { useSession } from "../state/session";
 
 type SearchState = "idle" | "loading" | "done" | "error";
@@ -14,6 +15,7 @@ export function FindMother({ onEpisodeCreated }: { onEpisodeCreated: (episodeId:
   const [results, setResults] = useState<Person[]>([]);
   const [busyPersonId, setBusyPersonId] = useState<string | null>(null);
   const [rowError, setRowError] = useState<Record<string, string>>({});
+  const attempts = useRef(createAttemptStore());
 
   const facilityName = (id: string) => staff?.memberships.find((m) => m.facility_id === id)?.facility_name ?? id;
 
@@ -43,7 +45,12 @@ export function FindMother({ onEpisodeCreated }: { onEpisodeCreated: (episodeId:
     setBusyPersonId(person.id);
     setRowError((prev) => ({ ...prev, [person.id]: "" }));
     try {
-      const episode = await api.createPregnancyEpisode(person.id);
+      const scope = `episode:${person.id}`;
+      const episode = await api.createPregnancyEpisode(
+        person.id,
+        attemptKey(attempts.current, scope, { person_id: person.id }),
+      );
+      clearAttempt(attempts.current, scope);
       onEpisodeCreated(episode.id);
     } catch (err) {
       setRowError((prev) => ({

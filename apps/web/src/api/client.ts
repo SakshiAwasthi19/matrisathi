@@ -18,20 +18,105 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const method = (options.method ?? "GET").toUpperCase();
+// A keyed create is safe to resend: the server returns the original record
+// for a repeated Idempotency-Key instead of creating a second one. Only those
+// requests are retried automatically after a network failure (the request may
+// or may not have reached the server — on a weak connection we can't tell).
+const NETWORK_RETRY_DELAYS_MS = [1000, 3000];
+
+// Endpoints whose 401 means "bad credentials / no session", not "access token
+// expired" — refreshing in response to these would be wrong or circular.
+// Logout is deliberately absent: it needs a live access token, and an expired
+// one must be renewed first or the refresh token would never get revoked.
+const NO_REFRESH_PATHS = new Set(["/auth/login", "/auth/refresh"]);
+
+let onSessionExpired: (() => void) | null = null;
+
+/** Called once a refresh has failed, i.e. the user must sign in again. */
+export function setSessionExpiredHandler(handler: (() => void) | null): void {
+  onSessionExpired = handler;
+}
+
+interface RequestOptions extends RequestInit {
+  idempotencyKey?: string;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function send(path: string, options: RequestOptions): Promise<Response> {
+  const { idempotencyKey, ...init } = options;
+  const method = (init.method ?? "GET").toUpperCase();
   const isMutating = method !== "GET";
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    method,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(isMutating ? { [CSRF_HEADER_NAME]: CSRF_HEADER_VALUE } : {}),
-      ...(options.headers ?? {}),
-    },
-  });
+  const doFetch = () =>
+    fetch(`${API_BASE}${path}`, {
+      ...init,
+      method,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(isMutating ? { [CSRF_HEADER_NAME]: CSRF_HEADER_VALUE } : {}),
+        ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+        ...(init.headers ?? {}),
+      },
+    });
+
+  if (!idempotencyKey) return doFetch();
+
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await doFetch();
+    } catch (err) {
+      // fetch() only rejects on network failure; HTTP error statuses
+      // resolve normally and are never retried here.
+      if (attempt >= NETWORK_RETRY_DELAYS_MS.length) throw err;
+      await sleep(NETWORK_RETRY_DELAYS_MS[attempt]);
+    }
+  }
+}
+
+// One refresh at a time. Within this tab, concurrent 401s share the same
+// in-flight promise; across tabs, the Web Locks API serializes refreshes.
+// Both matter because refresh tokens rotate on every use and the server
+// treats a reused (already-rotated) token as theft, revoking every session
+// for the user. Cookies are shared between tabs, so a tab that waited on the
+// lock sends the freshly rotated token, not the stale one.
+let refreshInFlight: Promise<boolean> | null = null;
+
+function withRefreshLock<T>(fn: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator !== "undefined" ? navigator.locks : undefined;
+  return locks ? (locks.request("matrisathi-refresh", fn) as Promise<T>) : fn();
+}
+
+/** Resolves true if the session was renewed, false if the server refused
+ * (the user must sign in again). Rejects on a network failure, which says
+ * nothing about whether the session is still valid. */
+function refreshSession(): Promise<boolean> {
+  if (!refreshInFlight) {
+    refreshInFlight = withRefreshLock(async () => {
+      const res = await send("/auth/refresh", { method: "POST" });
+      return res.ok;
+    }).finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  let res = await send(path, options);
+
+  if (res.status === 401 && !NO_REFRESH_PATHS.has(path)) {
+    // The access token is short-lived; renew it and replay once. A 401 is
+    // returned before any work is done server-side, so replaying a keyed
+    // create with the same Idempotency-Key is safe.
+    if (await refreshSession()) {
+      res = await send(path, options);
+    }
+    if (res.status === 401) onSessionExpired?.();
+  }
 
   if (res.status === 204) {
     return undefined as T;
@@ -104,8 +189,8 @@ export const api = {
     request<Staff>("/auth/login", { method: "POST", body: JSON.stringify({ username, password }) }),
   me: () => request<Staff>("/auth/me"),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
-  createPerson: (input: PersonCreateInput) =>
-    request<Person>("/people", { method: "POST", body: JSON.stringify(input) }),
+  createPerson: (input: PersonCreateInput, idempotencyKey: string) =>
+    request<Person>("/people", { method: "POST", body: JSON.stringify(input), idempotencyKey }),
   getPerson: (id: string) => request<Person>(`/people/${id}`),
   searchPeople: (params: { phone?: string; full_name?: string }) => {
     const q = new URLSearchParams();
@@ -115,10 +200,11 @@ export const api = {
   },
   verifyContact: (personId: string) =>
     request<Person>(`/people/${personId}/contact/verify`, { method: "POST" }),
-  createPregnancyEpisode: (personId: string) =>
+  createPregnancyEpisode: (personId: string, idempotencyKey: string) =>
     request<PregnancyEpisode>("/pregnancy-episodes", {
       method: "POST",
       body: JSON.stringify({ person_id: personId }),
+      idempotencyKey,
     }),
   getPregnancyEpisode: (id: string) => request<PregnancyEpisode>(`/pregnancy-episodes/${id}`),
 };
