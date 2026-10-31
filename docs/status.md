@@ -1,67 +1,100 @@
 # MatriSathi — project status
 
-Last updated: 2026-09-30. Full detail and the SG1 closure table:
-`docs/delivery/evidence/SG1/report.md`.
+Last updated: 2026-10-31. Full SG1 detail and closure table:
+`docs/delivery/evidence/SG1/report.md` (written 2026-09-30 — its remote/CI
+sections predate the remote being added; see "CI" below).
 
-## Completed (locally verified, not yet CI-verified or reviewer-accepted — see the evidence report's status model)
+## Completed (locally verified and CI-verified; not reviewer-accepted)
 
 Staff sign-in, mother registration (with intake precision for age/DOB and
 free-text history/allergies), pregnancy episode creation, an
 authorized-existing-person search by phone and/or name, contact
 verification, and viewing the persisted record — backend (FastAPI +
-PostgreSQL) and a React/Vite web UI, both locally runnable. Find/select/
-verify are now real screens (`FindMother.tsx`, `RegisterNewMother.tsx`),
-not just API endpoints — browser-verified end to end, including that
-selecting an existing mother never duplicates her person record and a
-shared phone number never gets merged or auto-selected. 52 automated
-tests, including a real multi-threaded concurrency test proving
-duplicate-creation is prevented at the database level, not by a
-process-local lock.
+PostgreSQL) and a React/Vite web UI. Selecting an existing mother never
+duplicates her person record, and a shared phone number is never merged or
+auto-selected.
 
-Also covered: real password-based staff auth (throttled, generic failures,
+Also covered: password-based staff auth (throttled, generic failures,
 rotating refresh with reuse detection, live disabled-user checks);
-explicit organization-admin authority (never inferred from a facility
-role, with an admin API to create facilities/staff and grant/revoke
-memberships); facility-scoped authorization everywhere, ownership always
-derived server-side; shared-phone isolation (never merged, never
-leaked cross-facility even via search); append-only audit logging
-enforced at the database role level; CI configuration (not yet run — no
-git remote).
+explicit organization-admin authority with an admin API; facility-scoped
+authorization everywhere, ownership derived server-side; shared-phone
+isolation; append-only audit logging enforced at the database role level;
+database-level duplicate prevention for retried creates.
+
+**Since 2026-09-30:**
+- **Shared team database option** (Supabase) and portability fixes found
+  while connecting one (2026-10-02).
+- **Staging preparation** (2026-10-02): configurable API base URL, CORS
+  origins and cookie SameSite; README steps for a synthetic-data-only
+  Render + Vercel deployment. Not deployed from this project.
+- **Web client fixes** (2026-10-31, `fa515a9`): the browser now sends an
+  `Idempotency-Key` on creates and retries network failures with the same
+  key, so a lost response or a failed second registration step no longer
+  creates a duplicate mother; a failed episode step after registration
+  retries only the episode. The session renews automatically on expiry
+  (single refresh per tab, serialized across tabs) and shows "Your session
+  has ended" when renewal is refused. First frontend tests (vitest, 18).
+  Browser-verified locally against synthetic data.
+
+## CI
+
+GitHub remote `matrisathi/jananisaathi` is configured and
+`.github/workflows/ci.yml` runs on every push to `main` (backend: migrations
+against a service Postgres, ruff, mypy, pytest; frontend: typecheck, tests,
+build). Runs so far, all on `main`:
+
+| Commit | Result | Run |
+|---|---|---|
+| `6aa6217` | success | [37049405155](https://github.com/matrisathi/jananisaathi/actions/runs/37049405155) |
+| `d0dd5f9` | success | [37051664697](https://github.com/matrisathi/jananisaathi/actions/runs/37051664697) |
+| `d6bef28` | success | [37062927432](https://github.com/matrisathi/jananisaathi/actions/runs/37062927432) |
+| `fa515a9` | success (backend + frontend, incl. vitest) | [41196038674](https://github.com/matrisathi/jananisaathi/actions/runs/41196038674) |
+
+AT05's tracker Result is still "Blocked" pending a reviewer re-checking it
+against a CI run tied to a SHA — those runs now exist; updating the tracker
+is the reviewer's call.
 
 ## Open decisions
 
-- SG0 decisions D01–D03 (named team lead/tech lead/developer, confirmed
-  hours, pilot site/language, repo/merge policy): unrecorded, tracker
-  Status still "Open." Not mine to approve.
-- D04 (auth/session/runtime versions): concrete proposal written into the
-  tracker, already built and tested, Status left "Open" pending tech-lead
-  approval.
-- Contact **value** editing (changing a phone number): deliberately not
-  built — needs a human decision on the identity-transfer risk first.
-- WhatsApp/BSP vendor: still not chosen.
-- Git hosting/remote: still not configured; steps prepared in the evidence
-  report §10 for when it's authorized.
+- SG0 decisions D01–D03 (team roles, hours, pilot site/language,
+  repo/merge policy): still Open. Commits are currently going straight to
+  `main`; the proposed branch + PR review flow (D03) isn't in force yet.
+- D04 (auth/session/runtime versions): proposal built and tested, awaiting
+  tech-lead approval.
+- **Episode model** (new): "Select & create episode" on an existing mother
+  always opens a *new* episode, and there is no way to reopen her existing
+  one. Needs a product decision (one active episode per mother? a "view her
+  episodes" path?) before building.
+- Contact **value** editing (changing a phone number): needs a decision on
+  the identity-transfer risk first.
+- WhatsApp/BSP vendor: not chosen.
+- D09 hosting/compliance for real patient data: open. Staging is
+  synthetic-data-only.
 
 ## Known limitations
 
 - No Child, CaregiverLink, CareTask, ApprovedContent or MessagingEvent
-  tables (correctly out of SG1 scope).
-- No entity `version`/optimistic-concurrency columns — nothing to protect
-  yet since no update endpoint exists; needs to land with SG2's first one.
-- No role-based capability differences beyond facility membership — all
-  four staff roles currently have identical permissions on this slice's
-  two actions, since F004's example restrictions (clinical plan approval,
-  report review) don't exist as actions yet.
-- Admin capabilities (creating facilities/staff, granting memberships) are
-  still API-only — not wired into the browser UI. Search/verify now are.
-- Contact value editing (changing a phone number) and name search's
-  matching (plain `ILIKE`, not fuzzy/phonetic) are known simplifications.
-- This is a local demonstration only. No staging/production environment,
-  no CI run, no doctor/clinical review, no legal/hosting review.
+  tables (out of SG1 scope).
+- No entity `version`/optimistic-concurrency columns — needed with SG2's
+  first update endpoint.
+- No role-based capability differences beyond facility membership.
+- Admin capabilities are API-only, not in the browser UI.
+- Name search is plain `ILIKE`; phone search is exact-match with no
+  normalization.
+- Idempotency keys are kept in browser memory: a page reload mid-attempt
+  starts a new attempt. Cross-tab refresh coordination needs the Web Locks
+  API (all current browsers).
+- vitest 2.1.9 (dev-only) carries `npm audit` advisories, as do the
+  existing Vite 5 / esbuild dev dependencies; fixes need a deliberate
+  Vite 6+ / vitest 4 upgrade.
+- Staging as documented would share the team database, accept the
+  committed seed login, and give the web process migrator credentials —
+  address before deploying it.
+- No doctor/clinical review, no legal/hosting review. Not production-ready.
 
 ## Next proposed task
 
-Build the caregiver-delegation flow (`CaregiverLink`), reusing the
-facility-membership and audit patterns already in place — but only after
-SG1's open human reviews (M003, M008) and SG0 decisions are actually
-recorded, per this stage's own instructions not to start SG2 early.
+Decide the episode model, then build the "reopen an existing episode" path
+on the find screen. Separately: harden the staging setup before any
+deployment. SG2 work (caregiver delegation) still waits on SG1's human
+reviews (M003, M008) and the SG0 decisions.
