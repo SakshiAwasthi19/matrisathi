@@ -690,3 +690,24 @@ export const api = {
   getPregnancyEpisode: (id: string) => request<PregnancyEpisode>(`/pregnancy-episodes/${id}`),
   listEpisodes: (personId: string) => request<PregnancyEpisode[]>(`/people/${personId}/episodes`),
 };
+
+// --- Overview summary: records waiting on someone, per bucket -------------
+
+export type AttentionBucket =
+  | "reports_to_review"
+  | "prescriptions_to_review"
+  | "dating_not_confirmed"
+  | "no_care_plan"
+  | "contact_not_confirmed"
+  | "referrals_in_progress";
+
+export interface AttentionRecord {
+  episode_id: string;
+  mother_full_name: string;
+}
+
+export type OverviewSummary = Record<AttentionBucket, { count: number; records: AttentionRecord[] }>;
+
+export const overviewApi = {
+  summary: () => request<OverviewSummary>("/overview/summary"),
+};

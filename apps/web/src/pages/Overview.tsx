@@ -16,6 +16,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { careApi, type CareTask } from "../api/client";
+import { AttentionPanel } from "../components/AttentionPanel";
 import { ActionError, useActionError } from "../components/care/shared";
 import { BarList } from "../components/charts";
 import { PageHeader } from "../components/PageHeader";
@@ -235,31 +236,34 @@ export function Overview() {
       </section>
 
       <div className="order-1 grid grid-cols-1 gap-6 lg:order-2 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-start">
-        <Card>
-          <CardHeader
-            icon={ListChecks}
-            title={t("overview.upNext")}
-            description={t("overview.upNextBody")}
-            actions={
-              <Link to="/today?scope=all" className="inline-flex min-h-10 items-center gap-1 text-sm font-semibold text-brand hover:text-brand-strong">
-                {t("overview.viewAll")}
-                <ArrowRight aria-hidden className="size-4" />
-              </Link>
-            }
-          />
-          {all.isPending ? (
-            <div className="space-y-5 py-2">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="space-y-2">
-                  <Skeleton className="w-40" />
-                  <Skeleton className="w-64 max-w-full" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <UpNext groups={upNext} />
-          )}
-        </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader
+              icon={ListChecks}
+              title={t("overview.upNext")}
+              description={t("overview.upNextBody")}
+              actions={
+                <Link to="/today?scope=all" className="inline-flex min-h-10 items-center gap-1 text-sm font-semibold text-brand hover:text-brand-strong">
+                  {t("overview.viewAll")}
+                  <ArrowRight aria-hidden className="size-4" />
+                </Link>
+              }
+            />
+            {all.isPending ? (
+              <div className="space-y-5 py-2">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="w-40" />
+                    <Skeleton className="w-64 max-w-full" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <UpNext groups={upNext} />
+            )}
+          </Card>
+          <AttentionPanel />
+        </div>
 
         <div className="space-y-6">
           <div className="space-y-3">

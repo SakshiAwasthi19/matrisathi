@@ -770,5 +770,21 @@
     "reports": "Reports awaiting review",
     "referrals": "Referral progress",
     "referralsBody": "How many referrals reached each step."
+  },
+  "attention": {
+    "title": "Needs attention",
+    "body": "Records waiting on your role, oldest first.",
+    "loadFailed": "Could not load this list. It will retry when you reload.",
+    "none": "None waiting",
+    "more_one": "and {{count}} more",
+    "more_other": "and {{count}} more",
+    "bucket": {
+      "reports_to_review": "Reports waiting for review",
+      "prescriptions_to_review": "Prescriptions to transcribe",
+      "dating_not_confirmed": "Dating not yet confirmed",
+      "no_care_plan": "No care plan published",
+      "contact_not_confirmed": "Contact number not confirmed",
+      "referrals_in_progress": "Referrals in progress"
+    }
   }
 }

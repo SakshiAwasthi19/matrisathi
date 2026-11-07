@@ -19,6 +19,8 @@ export const queryClient = new QueryClient({
     onSuccess: (_data, _vars, _ctx, mutation) => {
       if (mutation.meta?.silent) return;
       notify(mutation.meta?.toast ?? i18n.t("toast.saved"));
+      // Any change can move a record in or out of a "Needs attention" bucket.
+      void queryClient.invalidateQueries({ queryKey: ["overviewSummary"] });
     },
   }),
   defaultOptions: {
