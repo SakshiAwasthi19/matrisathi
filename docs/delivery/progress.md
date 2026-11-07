@@ -48,7 +48,7 @@ Weeks 7–8 now fall in the holiday period. Agree the release-candidate date wit
 | W2-B2 | 2 | Dev B | Screens: report upload, prescriptions, referrals, contacts | 4 | | Not started | | | | AT08, AT09 | | | |
 | W2-B3 | 2 | Dev B | Next step, birth plan, public urgent help, caregiver access | 6 | | Not started | | | | AT10, AT28 | | | |
 | W2-B4 | 2 | Dev B | Synthetic test cases for AT01–AT10 and AT28 | 5 | | Not started | | | | | | | |
-| W2-B5 | 2 | Dev B | Doctor packet: ANC template and urgent wording | 1 | | Not started | | | | | | | |
+| W2-B5 | 2 | Dev B | Doctor packet: ANC template and urgent wording | 1 | 0.5 (est.) | Ready for review | | | | | `docs/review/D05-anc-template-urgent-wording.md` | | Phase 1 started early (developer decision 7 Nov). Template structure, observation fields, urgent-help and birth-plan slots, 9 questions; no clinical content written by Claude. Ready to send. |
 | W3-A1 | 3 | Dev A | Provider adapter, signed webhook, durable outbox | 7 | | Not started | | | | AT12, AT30 | | | |
 | W3-A2 | 3 | Dev A | Media privacy and inbox access rules | 3 | | Not started | | | | | | | |
 | W3-A3 | 3 | Dev A | Outbound templates, delivery states, send-time checks | 6 | | Not started | | | | AT11, AT12 | | | |
