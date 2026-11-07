@@ -1,5 +1,6 @@
 from app.models.audit import AuditEvent
 from app.models.base import Base
+from app.models.birth_plan import BirthPlan
 from app.models.care import (
     Appointment,
     CarePlan,
@@ -46,4 +47,5 @@ __all__ = [
     "Observation",
     "LocalContact",
     "Referral",
+    "BirthPlan",
 ]

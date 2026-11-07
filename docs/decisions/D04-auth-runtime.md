@@ -100,7 +100,7 @@ Paths below are relative to `apps/api/` unless they start with `apps/`.
 | F4 | Refresh-token reuse detection is tested for revocation, but no test asserts its `refresh_token_reuse_detected` audit event (`auth.py:168-175`). | Low | Extend `test_refresh_rotates_token_and_old_one_stops_working` to assert the DENIED audit row. |
 | F5 | The audit model's comment points to `tests/test_audit_durability.py`, which does not exist (it is `tests/test_audit.py`). | Trivial | Fix the comment. |
 | F6 | Logout clears the cookies, but a copied access token stays valid until it expires (up to 15 minutes). The live `active` and membership checks still apply. | Low (accepted trade-off of short JWTs) | Accept, or shorten the access-token lifetime. |
-| F7 | CORS allows only `GET`, `POST`, `DELETE` (`main.py:13`). SG2 update endpoints using `PATCH`/`PUT` will fail from the browser until it is extended. | None yet | Add `PATCH` with the first update endpoint. |
+| F7 | CORS allows only `GET`, `POST`, `DELETE` (`main.py:13`). SG2 update endpoints using `PATCH`/`PUT` will fail from the browser until it is extended. | None yet | *W2-A5 (7 Nov) added `PUT` for the birth plan.* Add `PATCH` if an endpoint ever uses it. |
 
 ## 9. Proposed changes for SG2
 
