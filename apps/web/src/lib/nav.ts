@@ -17,6 +17,7 @@ export interface NavItem {
 export const NAV_ITEMS: readonly NavItem[] = [
   { labelKey: "nav.today", to: "/", roles: ALL_ROLES },
   { labelKey: "nav.mothers", to: "/mothers", roles: ALL_ROLES },
+  { labelKey: "nav.contacts", to: "/contacts", roles: ALL_ROLES },
 ];
 
 export function rolesOf(memberships: readonly Membership[]): Set<string> {
