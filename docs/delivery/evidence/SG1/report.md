@@ -136,9 +136,9 @@ No CHECK constraints exist. The age-precision rule (exactly one of date of birth
 | App role can create in schema `public` / create a schema | **No / No** |
 | Tables owned by the app role | **0** |
 | App role on `alembic_version` | SELECT, INSERT, UPDATE, DELETE at `48f6e0e`: **finding F8**, fixed in W1-A6 (none after `b2f8c41d9e02`) |
-| Grants for new tables | Written by hand in each migration; there are **no default privileges**. |
+| Grants for new tables | At `48f6e0e`: automatic, by `ALTER DEFAULT PRIVILEGES` set in `79d282bcc5f3` (full read/write/delete on every future table). Since W2-A2: removed by `b9d0e2a7c3f1`; each migration grants explicitly and `tests/test_db_grants.py` checks every table. |
 
-**Correction to the previous report:** its section 9 said `ALTER DEFAULT PRIVILEGES` automatically grants future tables to the app role. That was wrong: no migration contains it (checked 2026-11-07). New tables need an explicit grant; W2-A1 proposes default privileges or a migration helper.
+**Erratum (2026-11-07):** an earlier version of this rewrite claimed the 30 Sep report was wrong to say `ALTER DEFAULT PRIVILEGES` grants future tables to the app role. **That claim was itself wrong**: `79d282bcc5f3` does set it (built with a dynamic `format(...)`, which a shortened search missed). The 30 Sep report was right. The new grants test (W2-A2) caught it; the default was then removed on purpose (`b9d0e2a7c3f1`) so that history tables can be created without DELETE and nothing is granted by accident.
 
 ## 5. Defects and findings
 

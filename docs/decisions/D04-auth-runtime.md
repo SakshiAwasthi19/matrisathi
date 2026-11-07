@@ -40,7 +40,7 @@ Paths below are relative to `apps/api/` unless they start with `apps/`.
 | Two roles: the **migrator** owns and changes the schema; the **app** role (`matrisathi_app`) runs the API. | `config.py` (`database_url_migrator`, `database_url_app`); `app/core/db.py:9`; `alembic/env.py` | — |
 | The running API connects only as the app role. | `db.py:9`, `:19` | — |
 | The app role has SELECT/INSERT/UPDATE/DELETE on tables, but only **INSERT/SELECT on `audit_event`** (append-only). | `alembic/versions/0002_app_role_grants.py:47-58` | `test_app_db_role_cannot_update_or_delete_audit_rows` |
-| Grants are added **by hand per migration**; there are no default privileges. `idempotency_key` got its grant in `79d282bcc5f3`. | `0002_app_role_grants.py`; `alembic/versions/79d282bcc5f3_*.py:70` | — |
+| Future tables were granted to the app role **automatically**: `79d282bcc5f3` sets `ALTER DEFAULT PRIVILEGES` (read/write/delete) for the migrating role. *Corrected 2026-11-07; the first version of this document wrongly said there were none.* Since W2-A2 the default is removed (`b9d0e2a7c3f1`) and each migration grants explicitly. | `alembic/versions/79d282bcc5f3_*.py:70-87`; `b9d0e2a7c3f1_*.py`; `app/core/migration_helpers.py` | `test_app_role_has_exactly_the_intended_rights_on_every_table`, `test_no_automatic_default_grants_to_the_app_role` |
 | The app role cannot `TRUNCATE` (tests use the migrator to clean up). | `tests/conftest.py` (`_clean_tables`) | — |
 | No test yet proves the app role cannot run DDL (`CREATE`, `ALTER`, `DROP`). | — | Planned in W1-A4 |
 
@@ -106,7 +106,7 @@ Paths below are relative to `apps/api/` unless they start with `apps/`.
 
 1. **Role capabilities.** A server-side capability check (for example `require_capability(staff, facility_id, "plan.approve")`) mapping roles to actions, applied per route. Clinician-only actions: date confirmation, plan approval, report review, discharge. Which roles count as clinicians is a question below and for the doctor (M008 Q10).
 2. **Optimistic concurrency.** A `version` column on every updatable table; updates send the version they read; a stale version returns 409. Starts with W2-A1.
-3. **Default grants for the app role.** `ALTER DEFAULT PRIVILEGES` for the migrator role (or a migration helper), plus a test that the app role can use every table it should and cannot change `audit_event`. Needs approval (database roles).
+3. **Grants for new tables.** *Done in W2-A2 (approved 2026-11-07):* the automatic default grant is removed; each migration calls `grant_app_role`; a test checks the app role's exact rights on every table.
 4. **Fix F1 and F3** before staging is shared with reviewers.
 
 ## 10. Questions for the tech lead

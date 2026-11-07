@@ -1,5 +1,6 @@
 from app.models.audit import AuditEvent
 from app.models.base import Base
+from app.models.caregiver import CaregiverGrant
 from app.models.facility import Facility
 from app.models.identity import ContactMethod, Person
 from app.models.idempotency import IdempotencyKey
@@ -21,4 +22,5 @@ __all__ = [
     "PregnancyEpisode",
     "AuditEvent",
     "IdempotencyKey",
+    "CaregiverGrant",
 ]
