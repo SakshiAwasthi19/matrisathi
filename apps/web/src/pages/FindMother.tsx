@@ -1,152 +1,185 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Phone, Building2, Search } from "lucide-react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api, ApiError, type Person } from "../api/client";
+import { Avatar } from "../components/Avatar";
+import { PageState } from "../components/PageState";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+import { Field, Input } from "../components/ui/field";
+import { Alert, StatusBadge } from "../components/ui/status";
 import { formatAge } from "../lib/age";
 import { attemptKey, clearAttempt, createAttemptStore } from "../lib/attempts";
 import { useSession } from "../state/session";
 
-type SearchState = "idle" | "loading" | "done" | "error";
-
 export function FindMother({ onEpisodeCreated }: { onEpisodeCreated: (episodeId: string) => void }) {
+  const { t } = useTranslation();
   const { staff } = useSession();
+  const queryClient = useQueryClient();
   const [phone, setPhone] = useState("");
   const [fullName, setFullName] = useState("");
-  const [state, setState] = useState<SearchState>("idle");
-  const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<Person[]>([]);
-  const [busyPersonId, setBusyPersonId] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [results, setResults] = useState<Person[] | null>(null);
   const [rowError, setRowError] = useState<Record<string, string>>({});
   const attempts = useRef(createAttemptStore());
 
-  const facilityName = (id: string) => staff?.memberships.find((m) => m.facility_id === id)?.facility_name ?? id;
+  const facilityName = (id: string) =>
+    staff?.memberships.find((m) => m.facility_id === id)?.facility_name ?? id;
+  const message = (err: unknown, fallback: string) => (err instanceof ApiError ? err.message : fallback);
 
-  async function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (!phone.trim() && !fullName.trim()) {
-      setError("Enter a phone number, a name, or both.");
-      setState("error");
-      return;
-    }
-    setState("loading");
-    setError(null);
-    try {
-      const found = await api.searchPeople({
-        phone: phone.trim() || undefined,
-        full_name: fullName.trim() || undefined,
-      });
-      setResults(found);
-      setState("done");
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Search failed");
-      setState("error");
-    }
-  }
+  const search = useMutation({
+    mutationFn: (params: { phone?: string; full_name?: string }) => api.searchPeople(params),
+    onSuccess: (found) => setResults(found),
+  });
 
-  async function handleSelect(person: Person) {
-    setBusyPersonId(person.id);
-    setRowError((prev) => ({ ...prev, [person.id]: "" }));
-    try {
+  const openEpisode = useMutation({
+    mutationFn: async (person: Person) => {
       const scope = `episode:${person.id}`;
       const episode = await api.createPregnancyEpisode(
         person.id,
         attemptKey(attempts.current, scope, { person_id: person.id }),
       );
       clearAttempt(attempts.current, scope);
-      onEpisodeCreated(episode.id);
-    } catch (err) {
-      setRowError((prev) => ({
-        ...prev,
-        [person.id]: err instanceof ApiError ? err.message : "Could not open this record",
-      }));
-    } finally {
-      setBusyPersonId(null);
-    }
-  }
+      return episode;
+    },
+    onMutate: (person) => setRowError((prev) => ({ ...prev, [person.id]: "" })),
+    onSuccess: (episode) => onEpisodeCreated(episode.id),
+    onError: (err, person) =>
+      setRowError((prev) => ({ ...prev, [person.id]: message(err, t("find.openFailed")) })),
+  });
 
-  async function handleVerify(person: Person) {
-    setBusyPersonId(person.id);
-    try {
-      const updated = await api.verifyContact(person.id);
-      setResults((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-    } catch (err) {
-      setRowError((prev) => ({
-        ...prev,
-        [person.id]: err instanceof ApiError ? err.message : "Could not verify contact",
-      }));
-    } finally {
-      setBusyPersonId(null);
+  const verify = useMutation({
+    mutationFn: (person: Person) => api.verifyContact(person.id),
+    onMutate: (person) => setRowError((prev) => ({ ...prev, [person.id]: "" })),
+    onSuccess: (updated) => {
+      setResults((prev) => prev?.map((p) => (p.id === updated.id ? updated : p)) ?? null);
+      queryClient.setQueryData(["person", updated.id], updated);
+    },
+    onError: (err, person) =>
+      setRowError((prev) => ({ ...prev, [person.id]: message(err, t("find.confirmFailed")) })),
+  });
+
+  const busyId =
+    (openEpisode.isPending && openEpisode.variables?.id) || (verify.isPending && verify.variables?.id) || null;
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (!phone.trim() && !fullName.trim()) {
+      setFormError(t("find.needOneField"));
+      return;
     }
+    setFormError(null);
+    search.mutate({ phone: phone.trim() || undefined, full_name: fullName.trim() || undefined });
   }
 
   return (
-    <div style={{ maxWidth: 560, fontFamily: "sans-serif" }}>
-      <h2>Find an existing mother</h2>
-      <p style={{ color: "#555" }}>
-        Search only finds records at facilities you're assigned to. A shared phone number never merges
-        people — each match is listed separately.
-      </p>
-      <form onSubmit={handleSearch}>
-        <div style={{ marginBottom: 12 }}>
-          <label htmlFor="search_phone">Phone</label>
-          <br />
-          <input id="search_phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label htmlFor="search_name">Name (partial matches)</label>
-          <br />
-          <input id="search_name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-        </div>
-        <button type="submit" disabled={state === "loading"}>
-          {state === "loading" ? "Searching..." : "Search"}
-        </button>
-      </form>
+    <div className="space-y-4">
+      <Card>
+        <h2 className="text-lg font-semibold">{t("find.title")}</h2>
+        <p className="mt-1 text-base text-muted">{t("find.intro")}</p>
+        <form onSubmit={handleSearch} className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+          <Field label={t("find.phone")} htmlFor="search_phone">
+            <Input
+              id="search_phone"
+              inputMode="tel"
+              autoComplete="off"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </Field>
+          <Field label={t("find.name")} htmlFor="search_name">
+            <Input id="search_name" autoComplete="off" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          </Field>
+          <Button type="submit" disabled={search.isPending}>
+            <Search aria-hidden className="size-4" />
+            {search.isPending ? t("find.submitting") : t("find.submit")}
+          </Button>
+        </form>
+        {formError && (
+          <Alert kind="problem" className="mt-4">
+            {formError}
+          </Alert>
+        )}
+      </Card>
 
-      {state === "error" && <p style={{ color: "crimson" }}>{error}</p>}
-
-      {state === "done" && results.length === 0 && (
-        <p style={{ marginTop: 16 }}>
-          No matching records found in your facilities. If this mother is new here, use "Register new
-          mother" instead.
-        </p>
+      {results === null && !search.isPending && !search.isError && (
+        <PageState kind="start" title={t("find.startTitle")} body={t("find.startBody")} />
+      )}
+      {search.isPending && <PageState kind="loading" />}
+      {search.isError && (
+        <PageState kind="error" body={message(search.error, t("find.failed"))} />
+      )}
+      {!search.isPending && !search.isError && results?.length === 0 && (
+        <PageState kind="empty" title={t("find.emptyTitle")} body={t("find.emptyBody")} />
       )}
 
-      {results.length > 0 && (
-        <ul style={{ listStyle: "none", padding: 0, marginTop: 16 }}>
-          {results.map((person) => (
-            <li
-              key={person.id}
-              style={{ border: "1px solid #ccc", borderRadius: 4, padding: 12, marginBottom: 12 }}
-            >
-              <strong>{person.full_name}</strong>
-              <div style={{ fontSize: 14, color: "#333" }}>
-                <div>{formatAge(person)}</div>
-                <div>Phone: {person.phone}</div>
-                <div>Facility: {facilityName(person.registering_facility_id)}</div>
-                <div>
-                  Contact:{" "}
-                  {person.contact_verified_at ? (
-                    <span>
-                      confirmed by {person.contact_verified_by_name ?? "a staff member"} on{" "}
-                      {new Date(person.contact_verified_at).toLocaleDateString()}
-                    </span>
-                  ) : (
-                    <span>not yet confirmed with the family</span>
-                  )}
-                </div>
-              </div>
-              {rowError[person.id] && <p style={{ color: "crimson", fontSize: 13 }}>{rowError[person.id]}</p>}
-              <div style={{ marginTop: 8 }}>
-                <button disabled={busyPersonId === person.id} onClick={() => handleSelect(person)}>
-                  {busyPersonId === person.id ? "Opening..." : "Select & create episode"}
-                </button>{" "}
-                {!person.contact_verified_at && (
-                  <button disabled={busyPersonId === person.id} onClick={() => handleVerify(person)}>
-                    Confirm this is their number
-                  </button>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
+      {!search.isPending && results && results.length > 0 && (
+        <section aria-label={t("find.resultsCount", { count: results.length })} className="space-y-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-sm font-semibold text-muted">{t("find.resultsCount", { count: results.length })}</p>
+            {results.length > 1 && <p className="text-sm text-muted">{t("find.matchHint")}</p>}
+          </div>
+          <ul className="space-y-3">
+            {results.map((person) => (
+              <li key={person.id}>
+                <Card className="space-y-4 transition-shadow hover:shadow-raised">
+                  <div className="flex items-center gap-3">
+                    <Avatar name={person.full_name} />
+                    <div>
+                      <p className="text-lg font-semibold">{person.full_name}</p>
+                      <p className="text-base text-muted">{formatAge(person, t)}</p>
+                    </div>
+                  </div>
+                  <dl className="grid gap-2 text-base sm:grid-cols-2">
+                    <div className="flex items-center gap-2">
+                      <Phone aria-hidden className="size-4 text-muted" />
+                      <dt className="sr-only">{t("find.phoneLabel")}</dt>
+                      <dd>{person.phone}</dd>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Building2 aria-hidden className="size-4 text-muted" />
+                      <dt className="sr-only">{t("find.facilityLabel")}</dt>
+                      <dd>{facilityName(person.registering_facility_id)}</dd>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <dt className="sr-only">{t("find.contactLabel")}</dt>
+                      <dd>
+                        {person.contact_verified_at ? (
+                          <StatusBadge kind="confirmed">
+                            {t("find.contactConfirmedBy", {
+                              name: person.contact_verified_by_name ?? t("find.aStaffMember"),
+                              date: new Date(person.contact_verified_at).toLocaleDateString(),
+                            })}
+                          </StatusBadge>
+                        ) : (
+                          <StatusBadge kind="pending">{t("status.notConfirmed")}</StatusBadge>
+                        )}
+                      </dd>
+                    </div>
+                  </dl>
+                  {rowError[person.id] && <Alert kind="problem">{rowError[person.id]}</Alert>}
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button disabled={busyId === person.id} onClick={() => openEpisode.mutate(person)}>
+                      {openEpisode.isPending && openEpisode.variables?.id === person.id
+                        ? t("find.selecting")
+                        : t("find.select")}
+                    </Button>
+                    {!person.contact_verified_at && (
+                      <Button
+                        variant="secondary"
+                        disabled={busyId === person.id}
+                        onClick={() => verify.mutate(person)}
+                      >
+                        {t("find.confirmNumber")}
+                      </Button>
+                    )}
+                  </div>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

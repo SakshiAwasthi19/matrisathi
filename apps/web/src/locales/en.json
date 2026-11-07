@@ -1,0 +1,157 @@
+{
+  "app": {
+    "name": "MatriSathi",
+    "tagline": "Staff console"
+  },
+  "env": {
+    "banner": "{{label}} environment: synthetic data only. Not for real patients."
+  },
+  "nav": {
+    "label": "Main",
+    "mothers": "Find or register a mother",
+    "signedInAs": "Signed in as {{name}}",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…"
+  },
+  "common": {
+    "loading": "Loading…",
+    "retry": "Try again",
+    "backHome": "Back to find or register",
+    "syntheticOnly": "Synthetic data only. Never enter a real person's details."
+  },
+  "states": {
+    "errorTitle": "Something went wrong",
+    "errorBody": "The request did not complete. Check the connection and try again.",
+    "noAccessTitle": "Not found, or you don't have access",
+    "noAccessBody": "This record does not exist, or it belongs to a facility you are not assigned to.",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "This address does not match any page."
+  },
+  "status": {
+    "pendingReview": "Pending review",
+    "unknown": "Unknown",
+    "notRecorded": "Not recorded",
+    "confirmed": "Confirmed",
+    "notConfirmed": "Not yet confirmed"
+  },
+  "login": {
+    "title": "Staff sign in",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "failed": "Sign-in failed. Check the connection and try again.",
+    "sessionEnded": "Your session has ended. Please sign in again.",
+    "heroTitle": "Care that follows every mother",
+    "heroBody": "A shared workspace for coordinators, nurses, ASHAs and doctors.",
+    "pointSharedPhone": "Built for shared phones: one number never merges two people.",
+    "pointUnknown": "Nothing is guessed: unknown stays unknown.",
+    "pointFacility": "You see only the records of the facilities you work at.",
+    "subtitle": "Sign in with the account your administrator gave you."
+  },
+  "mothers": {
+    "title": "Mothers",
+    "tabFind": "Find existing mother",
+    "tabRegister": "Register new mother"
+  },
+  "find": {
+    "title": "Find an existing mother",
+    "intro": "Search only finds records at facilities you are assigned to. A shared phone number never merges people: each match is listed separately.",
+    "phone": "Phone",
+    "name": "Name (partial matches)",
+    "submit": "Search",
+    "submitting": "Searching…",
+    "needOneField": "Enter a phone number, a name, or both.",
+    "failed": "Search failed.",
+    "emptyTitle": "No matching records",
+    "emptyBody": "No match in your facilities. If this mother is new here, use \"Register new mother\".",
+    "resultsCount_one": "{{count}} match",
+    "resultsCount_other": "{{count}} matches",
+    "phoneLabel": "Phone",
+    "facilityLabel": "Facility",
+    "contactLabel": "Contact",
+    "contactConfirmedBy": "Confirmed by {{name}} on {{date}}",
+    "aStaffMember": "a staff member",
+    "select": "Select & create episode",
+    "selecting": "Opening…",
+    "openFailed": "Could not open this record.",
+    "confirmNumber": "Confirm this is their number",
+    "confirmFailed": "Could not confirm the contact.",
+    "startTitle": "Search before you register",
+    "startBody": "Search by phone, name or both. If the mother is not found, register her with \"Register new mother\".",
+    "matchHint": "Check the name and age before choosing. A shared phone can belong to more than one person."
+  },
+  "register": {
+    "title": "Register a mother and open a pregnancy episode",
+    "facility": "Facility",
+    "selectFacility": "Select a facility",
+    "facilityOption": "{{facility}} ({{role}})",
+    "fullName": "Mother's full name",
+    "phone": "Contact phone",
+    "phoneHint": "A phone number may be shared by more than one household member. It is never used as anyone's identity.",
+    "ageLegend": "Age / date of birth",
+    "ageUnknown": "Unknown",
+    "ageExact": "Exact date of birth",
+    "ageYearOnly": "Year of birth only",
+    "ageApprox": "Approximate age (years)",
+    "ageHint": "Never guess. Choose \"Unknown\" rather than inventing a date.",
+    "history": "Reported medical history (as told by the family, optional)",
+    "allergies": "Known allergies / current medicines (optional)",
+    "submit": "Register mother & create episode",
+    "submitting": "Saving…",
+    "retryEpisode": "Try opening the episode again",
+    "registeredPending": "{{name}} is registered. Opening the pregnancy episode did not finish. Try again.",
+    "failed": "Could not register the mother.",
+    "noFacilities": "You are not assigned to any facility, so you cannot register a mother. Ask an administrator.",
+    "sectionWho": "Mother's details",
+    "sectionAge": "Age",
+    "sectionHistory": "As told by the family"
+  },
+  "episode": {
+    "title": "Pregnancy episode",
+    "mother": "Mother",
+    "status": "Status",
+    "statusACTIVE": "Active",
+    "statusCLOSED": "Closed",
+    "datingSource": "Dating source",
+    "datingUNKNOWN": "Unknown",
+    "datingSELF_REPORTED": "Self-reported",
+    "datingCLINICIAN_CONFIRMED": "Confirmed by a clinician",
+    "created": "Created",
+    "recordId": "Record ID",
+    "motherRecord": "Mother's record",
+    "motherLoadFailed": "Could not load the mother's record.",
+    "age": "Age / date of birth",
+    "history": "Reported medical history",
+    "allergies": "Known allergies / medicines",
+    "contact": "Contact ({{phone}})",
+    "contactConfirmedBy": "Confirmed by {{name}} on {{date}}",
+    "contactNotConfirmed": "Not yet confirmed with the family (staff confirmation only; no OTP).",
+    "confirmNumber": "Confirm this is their number",
+    "confirming": "Confirming…",
+    "confirmFailed": "Could not confirm the contact.",
+    "reloadNote": "This record is loaded from the server each time, so reloading the page shows what is saved.",
+    "summary": "Episode summary",
+    "openedOn": "Opened {{date}}",
+    "contactLabel": "Contact phone"
+  },
+  "age": {
+    "dob": "Date of birth {{date}}",
+    "dobUnknown": "Date of birth unknown",
+    "yearOnly": "Born {{year}} (year only)",
+    "yearUnknown": "Birth year unknown",
+    "approx": "About {{years}} years (approximate)",
+    "approxUnknown": "Approximate age unknown",
+    "notRecorded": "Age / date of birth not recorded"
+  },
+  "header": {
+    "workingAt": "Working at {{facilities}}"
+  },
+  "guide": {
+    "title": "Before you start",
+    "searchFirst": "Search first. Register only if she is not found, so the same mother is never registered twice.",
+    "sharedPhone": "A phone can be shared by a family. Matches are never merged; check the name and age before choosing.",
+    "unknown": "If something is not known, choose \"Unknown\". Never guess a date or age.",
+    "synthetic": "Synthetic data only. Never enter a real person's details."
+  }
+}
