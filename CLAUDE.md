@@ -70,3 +70,11 @@ Keep tasks small enough to demonstrate and review.
 Maintain a brief project status with completed work, open decisions,
 known limitations and the next task.
 Do not claim production readiness solely because tests pass.
+
+
+## Delivery plan
+Before any task, read docs/delivery/PHASE_PLAN.md and
+docs/delivery/CLAUDE_BUILD_PLAN.md. Work only on the task ID I give you,
+follow the task loop in CLAUDE_BUILD_PLAN.md Part C, and keep
+docs/delivery/progress.md and docs/delivery/phases.md up to date.
+This file (CLAUDE.md) wins if anything conflicts.
