@@ -62,7 +62,18 @@ uv run python -m app.scripts.seed_dev
 Remove-Item Env:DATABASE_URL_APP, Env:SEED_PASSWORD, Env:ENV
 ```
 
-This creates the synthetic organization, facility and `coordinator1`. With `ENV=staging` the committed dev password is refused and the password is never printed. Keep it in the password manager; share it with reviewers through it, not chat.
+This creates the synthetic organization, facility and `coordinator1`.
+
+Then the **placeholder care-plan template** (no clinical content; labelled "SYNTHETIC PLACEHOLDER – NOT CLINICALLY APPROVED"; replaced by the doctor-approved template under D05). It writes through the migrator role, so set the migrator URL for this one command only:
+
+```powershell
+$env:ENV = "staging"
+$env:DATABASE_URL_MIGRATOR = "<staging migrator URL>"
+uv run python -m app.scripts.seed_placeholder_template
+Remove-Item Env:DATABASE_URL_MIGRATOR, Env:ENV
+```
+
+The seed account `coordinator1` cannot publish plans or confirm dating (clinician-only). For the demo, add a synthetic DOCTOR user through the admin API, or ask Claude for a seed option. With `ENV=staging` the committed dev password is refused and the password is never printed. Keep it in the password manager; share it with reviewers through it, not chat.
 
 ## 4. Deploy the API (Render)
 

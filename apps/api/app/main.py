@@ -1,7 +1,7 @@
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routers import admin, auth, files, people, pregnancies
+from app.api.routers import admin, auth, care, files, people, pregnancies
 from app.core.config import settings
 from app.core.startup_checks import check_runtime_settings
 
@@ -25,6 +25,7 @@ api_v1.include_router(people.router)
 api_v1.include_router(pregnancies.router)
 api_v1.include_router(admin.router)
 api_v1.include_router(files.router)
+api_v1.include_router(care.router)
 app.include_router(api_v1)
 
 

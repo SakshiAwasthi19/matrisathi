@@ -9,6 +9,7 @@ from app.models.care import (
     Investigation,
 )
 from app.models.caregiver import CaregiverGrant
+from app.models.dating import EpisodeDating
 from app.models.facility import Facility
 from app.models.files import FileObject
 from app.models.identity import ContactMethod, Person
@@ -39,4 +40,5 @@ __all__ = [
     "CareTask",
     "Investigation",
     "FileObject",
+    "EpisodeDating",
 ]
