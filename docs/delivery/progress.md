@@ -37,7 +37,7 @@ Weeks 7–8 now fall in the holiday period. Agree the release-candidate date wit
 | W1-B5 | 1 | Dev B | WhatsApp provider comparison (D06) | 4 | | Not started | | | | | | | |
 | W1-B6 | 1 | Dev B | Doctor intake review packet (M008) | 2 | | Not started | | | | | | | Checklist material exists in SG1 report §3, §11. |
 | W1-B7 | 1 | Dev B | (added) UI foundation and app shell | 8 | | Not started | | | | | | | D14 approved by the developer 7 Nov. i18n: English plus an empty second locale. |
-| W1-B8 | 1 | Dev B | (added) D13–D15 decision proposals | 2 (est.) | | Not started | | | | | | | Added 7 Nov. Hours are an estimate, not from the tracker. |
+| W1-B8 | 1 | Dev B | (added) D13–D15 decision proposals | 2 (est.) | 1 (est.) | Ready for review | | | | | `docs/decisions/D13-episode-model.md`, `D14-ui-dependencies.md`, `D15-single-developer-review.md` | | Added 7 Nov. Hours are an estimate, not from the tracker. D14 companion packages (shadcn helpers, @tailwindcss/vite, i18next, bundled Noto Sans) approved by the developer 7 Nov. |
 | W2-A1 | 2 | Dev A | Plan and task state model; private file storage | 4 | | Not started | | | | | | | Includes the app-role grants proposal for new tables. |
 | W2-A2 | 2 | Dev A | Patient and caregiver access; propose D07 | 4 | | Not started | | | | | | | |
 | W2-A3 | 2 | Dev A | API: dating, ANC plan, appointments, owned tasks | 5 | | Not started | | | | AT06, AT07 | | | |
