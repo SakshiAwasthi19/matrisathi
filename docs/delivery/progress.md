@@ -35,7 +35,7 @@ Weeks 7–8 now fall in the holiday period. Agree the release-candidate date wit
 | W1-B3 | 1 | Dev B | Run AT01–AT05; rewrite SG1 evidence pack | 6 | | Not started | | | | AT01–AT05, P01, P03 | | | Existing report is out of date ("no remote", "uncommitted"). |
 | W1-B4 | 1 | Dev B | Refresh status.md; create reporting files | 2 | 0.5 (est.) | Ready for review | | | | | `docs/delivery/progress.md`, `docs/delivery/phases.md` | | |
 | W1-B5 | 1 | Dev B | WhatsApp provider comparison (D06) | 4 | | Not started | | | | | | | |
-| W1-B6 | 1 | Dev B | Doctor intake review packet (M008) | 2 | | Not started | | | | | | | Checklist material exists in SG1 report §3, §11. |
+| W1-B6 | 1 | Dev B | Doctor intake review packet (M008) | 2 | 1 (est.) | Ready for review | | | | | `docs/review/M008-intake-and-roles.md` | | Ready to send. Flags gaps: no preferred language, dating or information source on the screen; no ANM role; no role differences yet. |
 | W1-B7 | 1 | Dev B | (added) UI foundation and app shell | 8 | | Not started | | | | | | | D14 approved by the developer 7 Nov. i18n: English plus an empty second locale. |
 | W1-B8 | 1 | Dev B | (added) D13–D15 decision proposals | 2 (est.) | 1 (est.) | Ready for review | | | | | `docs/decisions/D13-episode-model.md`, `D14-ui-dependencies.md`, `D15-single-developer-review.md` | | Added 7 Nov. Hours are an estimate, not from the tracker. D14 companion packages (shadcn helpers, @tailwindcss/vite, i18next, bundled Noto Sans) approved by the developer 7 Nov. |
 | W2-A1 | 2 | Dev A | Plan and task state model; private file storage | 4 | | Not started | | | | | | | Includes the app-role grants proposal for new tables. |
