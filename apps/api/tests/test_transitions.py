@@ -9,6 +9,7 @@ from app.domain.transitions import (
     CARE_PLAN_TRANSITIONS,
     CLINICIAN_ONLY,
     INVESTIGATION_TRANSITIONS,
+    REFERRAL_TRANSITIONS,
     TASK_TRANSITIONS,
     ClinicianOnlyError,
     StaleVersionError,
@@ -21,6 +22,7 @@ from app.models.care import AppointmentStatus as A
 from app.models.care import CarePlanStatus as P
 from app.models.care import InvestigationStatus as I
 from app.models.care import TaskStatus as T
+from app.models.records import ReferralStatus as R
 
 DOCTOR = ["DOCTOR"]
 NON_CLINICIANS = [["ASHA"], ["NURSE"], ["COORDINATOR"], []]
@@ -30,6 +32,7 @@ MACHINES = {
     "task": (TASK_TRANSITIONS, list(T)),
     "investigation": (INVESTIGATION_TRANSITIONS, list(I)),
     "care_plan": (CARE_PLAN_TRANSITIONS, list(P)),
+    "referral": (REFERRAL_TRANSITIONS, list(R)),
 }
 
 
@@ -102,3 +105,13 @@ def test_stale_version_is_rejected():
     check_version(3, 3)
     with pytest.raises(StaleVersionError):
         check_version(4, 3)
+
+
+def test_a_referral_never_closes_without_passing_through_close():
+    """Closing is its own move (with a reason); no other state is a closure."""
+    for state in R:
+        if state not in (R.CLOSED, R.FOLLOW_UP_COMPLETED):
+            assert R.CLOSED in REFERRAL_TRANSITIONS[state]
+    check_transition(REFERRAL_TRANSITIONS, R.SENT, R.CONTACTED, ["COORDINATOR"])
+    with pytest.raises(TransitionError):
+        check_transition(REFERRAL_TRANSITIONS, R.SENT, R.FOLLOW_UP_COMPLETED, ["DOCTOR"])
