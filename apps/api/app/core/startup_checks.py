@@ -53,6 +53,13 @@ def check_runtime_settings(settings: Settings, environ: Mapping[str, str] | None
     if not settings.cookie_secure:
         problems.append("COOKIE_SECURE must be true")
 
+    # Local disk on a hosted web service is temporary and shared by nothing;
+    # private files must go to the configured private bucket (W2-A1).
+    if settings.file_store_backend != "supabase" or not settings.supabase_url or not settings.supabase_service_role_key:
+        problems.append(
+            "FILE_STORE_BACKEND must be 'supabase' with SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY set"
+        )
+
     if problems:
         raise UnsafeConfigurationError(
             f"Refusing to start with ENV={settings.env.strip()!r}: " + "; ".join(problems)

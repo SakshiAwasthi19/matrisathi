@@ -27,6 +27,9 @@ def _staging_settings(**overrides) -> Settings:
         # conftest puts a migrator URL in os.environ for the test database;
         # pin the field to its default so each test controls this itself.
         "database_url_migrator": DEFAULT_MIGRATOR_URL,
+        "file_store_backend": "supabase",
+        "supabase_url": "https://example.supabase.invalid",
+        "supabase_service_role_key": "service-key-not-shown-anywhere",
     }
     values.update(overrides)
     return Settings(_env_file=None, **values)  # type: ignore[call-arg]
@@ -60,6 +63,16 @@ def test_staging_refuses_migrator_credentials_in_api_environment():
     with pytest.raises(UnsafeConfigurationError, match="DATABASE_URL_MIGRATOR") as exc:
         check_runtime_settings(_staging_settings(database_url_migrator=url), environ={})
     assert "not-shown-anywhere" not in str(exc.value)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [{"file_store_backend": "local"}, {"supabase_url": None}, {"supabase_service_role_key": None}],
+)
+def test_staging_refuses_local_or_unconfigured_file_storage(overrides):
+    with pytest.raises(UnsafeConfigurationError, match="FILE_STORE_BACKEND") as exc:
+        check_runtime_settings(_staging_settings(**overrides), environ={})
+    assert "service-key-not-shown-anywhere" not in str(exc.value)
 
 
 def test_staging_refuses_insecure_cookies():

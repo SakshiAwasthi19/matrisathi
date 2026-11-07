@@ -17,7 +17,9 @@ Layout: a **separate** Supabase project (never the shared team database), a Rend
 2. Project Settings → Database → Connection string. Use the **session-mode pooler** (port 5432, host `aws-0-<region>.pooler.supabase.com`). Not the direct connection (IPv6-only), and not the transaction pooler on 6543 (migrations fail there).
    - Migrator URL shape: `postgresql+psycopg://postgres.<project-ref>:<postgres-password>@aws-0-<region>.pooler.supabase.com:5432/postgres`
    - App URL shape: `postgresql+psycopg://matrisathi_app.<project-ref>:<app-password>@aws-0-<region>.pooler.supabase.com:5432/postgres`
-3. Generate the **app-role password** (letters, digits and `_ . ~ -` only, at least 16 characters; migration `0002` refuses anything else outside development):
+3. Storage → **New bucket** named `matrisathi-files`. Leave **Public bucket off** (private). Add no policies: the API reaches it only with the service-role key, server side, and serves files itself after checking the user's facility.
+4. Project Settings → API: copy the project URL and the **service_role** key into the password manager. The service-role key bypasses Supabase's access rules for this project, so it goes only into the Render API service (section 4), never into the web app or Vercel.
+5. Generate the **app-role password** (letters, digits and `_ . ~ -` only, at least 16 characters; migration `0002` refuses anything else outside development):
    ```
    python -c "import secrets; print(secrets.token_urlsafe(32))"
    ```
@@ -78,8 +80,12 @@ This creates the synthetic organization, facility and `coordinator1`. With `ENV=
    | `COOKIE_SECURE` | `true` |
    | `COOKIE_SAMESITE` | `none` (API and web app are on different domains) |
    | `CORS_ALLOWED_ORIGINS` | the Vercel URL, set after section 5 |
+   | `FILE_STORE_BACKEND` | `supabase` (the API refuses to start on staging with anything else) |
+   | `SUPABASE_URL` | the staging project URL (section 1) |
+   | `SUPABASE_SERVICE_ROLE_KEY` | the staging project's service_role key (section 1) |
+   | `SUPABASE_STORAGE_BUCKET` | `matrisathi-files` |
 
-   **Do not set:** `DATABASE_URL_MIGRATOR` (the API refuses to start), `MATRISATHI_APP_DB_PASSWORD`, `SEED_PASSWORD`, `GITHUB_TOKEN`, any `SUPABASE_*` key.
+   **Do not set:** `DATABASE_URL_MIGRATOR` (the API refuses to start), `MATRISATHI_APP_DB_PASSWORD`, `SEED_PASSWORD`, `GITHUB_TOKEN`, `SUPABASE_ANON_KEY`.
 6. Free-tier note: free Render services sleep after about 15 minutes idle; the first request then takes up to a minute. Open `/health` a minute before a demo.
 
 If the deploy log shows `Refusing to start with ENV='staging': …`, it names the setting to fix (never its value).
