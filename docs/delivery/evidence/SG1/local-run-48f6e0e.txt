@@ -1,0 +1,96 @@
+SG1 local acceptance run
+Commit: 48f6e0e2f9826f9f040538ab08fb9588abd81314 (branch w1/w1-b2-vercel-staging)
+Date: 2026-11-07T10:04Z
+Runtime: Python 3.12.13 (pinned 3.12.14 in CI), PostgreSQL 16.4 (docker), Node v24.12.0 (pinned 26.8.1 in CI)
+Synthetic data only.
+
+===== AT01 Staff login and sessions =====
+tests/test_auth.py::test_login_success_sets_cookies PASSED               [  7%]
+tests/test_auth.py::test_no_session_is_rejected PASSED                   [ 14%]
+tests/test_auth.py::test_malformed_access_token_is_rejected PASSED       [ 21%]
+tests/test_auth.py::test_access_token_signed_with_wrong_secret_is_rejected PASSED [ 28%]
+tests/test_auth.py::test_login_wrong_password_is_generic PASSED          [ 35%]
+tests/test_auth.py::test_login_unknown_username_is_same_generic_error PASSED [ 42%]
+tests/test_auth.py::test_disabled_user_cannot_login PASSED               [ 50%]
+tests/test_auth.py::test_login_throttled_after_repeated_failures PASSED  [ 57%]
+tests/test_auth.py::test_disabled_user_loses_access_mid_session PASSED   [ 64%]
+tests/test_auth.py::test_logout_requires_csrf_header PASSED              [ 71%]
+tests/test_auth.py::test_logout_revokes_refresh_token PASSED             [ 78%]
+tests/test_auth.py::test_refresh_rotates_token_and_old_one_stops_working PASSED [ 85%]
+tests/test_staging_safety.py::test_login_requires_csrf_header PASSED     [ 92%]
+tests/test_staging_safety.py::test_refresh_requires_csrf_header PASSED   [100%]
+============================= 14 passed in 5.44s ==============================
+
+===== AT02 Organization and facility isolation =====
+tests/test_access_isolation.py::test_staff_at_facility_b_cannot_read_facility_a_episode PASSED [  8%]
+tests/test_access_isolation.py::test_revoked_membership_loses_access_immediately PASSED [ 16%]
+tests/test_access_isolation.py::test_disabled_facility_blocks_new_person_registration PASSED [ 25%]
+tests/test_access_isolation.py::test_two_organizations_are_isolated PASSED [ 33%]
+tests/test_admin_membership.py::test_org_admin_can_create_facility_and_grant_membership PASSED [ 41%]
+tests/test_admin_membership.py::test_revoking_a_membership_through_the_admin_api_removes_access PASSED [ 50%]
+tests/test_admin_membership.py::test_non_org_admin_cannot_create_facility_or_grant_membership PASSED [ 58%]
+tests/test_admin_membership.py::test_org_admin_of_org_a_cannot_grant_membership_at_org_b_facility PASSED [ 66%]
+tests/test_org_admin.py::test_org_admin_grant_is_required_not_inferred_from_membership_role PASSED [ 75%]
+tests/test_org_admin.py::test_org_admin_of_org_a_cannot_administer_org_b PASSED [ 83%]
+tests/test_org_admin.py::test_revoked_org_admin_grant_loses_authority PASSED [ 91%]
+tests/test_org_admin.py::test_org_admin_authority_alone_grants_no_clinical_record_access PASSED [100%]
+============================= 12 passed in 6.18s ==============================
+
+===== AT03 Shared phone and reference injection =====
+tests/test_shared_phone.py::test_two_people_can_share_a_phone_without_being_merged PASSED [  5%]
+tests/test_shared_phone.py::test_shared_phone_does_not_leak_across_organizations PASSED [ 10%]
+tests/test_person_search_and_intake.py::test_search_finds_only_records_at_callers_own_facility PASSED [ 15%]
+tests/test_person_search_and_intake.py::test_search_on_shared_phone_returns_distinct_people_not_merged PASSED [ 21%]
+tests/test_person_search_and_intake.py::test_search_result_cannot_be_linked_into_episode_without_access PASSED [ 26%]
+tests/test_person_search_and_intake.py::test_contact_verification_records_attribution PASSED [ 31%]
+tests/test_person_search_and_intake.py::test_contact_verification_is_facility_scoped PASSED [ 36%]
+tests/test_person_search_and_intake.py::test_age_precision_rejects_mismatched_fields PASSED [ 42%]
+tests/test_person_search_and_intake.py::test_unknown_age_precision_stores_no_invented_values PASSED [ 47%]
+tests/test_person_search_and_intake.py::test_pregnancy_episode_dating_estimate_stays_null_when_not_supplied PASSED [ 52%]
+tests/test_person_search_and_intake.py::test_search_by_partial_name_scoped_to_facility PASSED [ 57%]
+tests/test_person_search_and_intake.py::test_search_requires_at_least_one_field PASSED [ 63%]
+tests/test_person_search_and_intake.py::test_verifier_name_is_exposed_after_verification PASSED [ 68%]
+tests/test_person_pregnancy_authz.py::test_episode_creation_rejected_for_inaccessible_person PASSED [ 73%]
+tests/test_person_pregnancy_authz.py::test_episode_creation_rejected_for_nonexistent_person PASSED [ 78%]
+tests/test_person_pregnancy_authz.py::test_episode_facility_is_derived_server_side_not_from_request_body PASSED [ 84%]
+tests/test_person_pregnancy_authz.py::test_person_creation_rejected_for_facility_caller_is_not_a_member_of PASSED [ 89%]
+tests/test_person_pregnancy_authz.py::test_retried_person_creation_with_same_idempotency_key_does_not_duplicate PASSED [ 94%]
+tests/test_person_pregnancy_authz.py::test_retried_pregnancy_episode_creation_with_same_idempotency_key_does_not_duplicate PASSED [100%]
+============================= 19 passed in 8.72s ==============================
+
+===== AT04 Audit integrity =====
+tests/test_audit.py::test_create_and_read_each_produce_one_audit_row PASSED [ 11%]
+tests/test_audit.py::test_denied_access_writes_a_denied_audit_row PASSED [ 22%]
+tests/test_audit.py::test_audit_row_survives_rollback_of_the_caller_session PASSED [ 33%]
+tests/test_audit.py::test_app_db_role_cannot_update_or_delete_audit_rows PASSED [ 44%]
+tests/test_staging_safety.py::test_app_db_role_cannot_run_ddl[CREATE TABLE ddl_probe (id integer)] PASSED [ 55%]
+tests/test_staging_safety.py::test_app_db_role_cannot_run_ddl[ALTER TABLE person ADD COLUMN ddl_probe integer] PASSED [ 66%]
+tests/test_staging_safety.py::test_app_db_role_cannot_run_ddl[DROP TABLE person] PASSED [ 77%]
+tests/test_staging_safety.py::test_app_db_role_cannot_run_ddl[CREATE SCHEMA ddl_probe] PASSED [ 88%]
+tests/test_staging_safety.py::test_app_db_role_cannot_run_ddl[CREATE INDEX ddl_probe_idx ON person (full_name)] PASSED [100%]
+============================== 9 passed in 3.84s ==============================
+
+===== P01 Shared phone (pilot check) =====
+tests/test_shared_phone.py::test_two_people_can_share_a_phone_without_being_merged PASSED [ 25%]
+tests/test_shared_phone.py::test_shared_phone_does_not_leak_across_organizations PASSED [ 50%]
+tests/test_person_search_and_intake.py::test_search_on_shared_phone_returns_distinct_people_not_merged PASSED [ 75%]
+tests/test_episode_model.py::test_mothers_are_independent PASSED         [100%]
+============================== 4 passed in 3.89s ==============================
+
+===== P03 Wrong facility denied (pilot check) =====
+tests/test_access_isolation.py::test_staff_at_facility_b_cannot_read_facility_a_episode PASSED [ 20%]
+tests/test_person_pregnancy_authz.py::test_episode_creation_rejected_for_inaccessible_person PASSED [ 40%]
+tests/test_person_search_and_intake.py::test_search_finds_only_records_at_callers_own_facility PASSED [ 60%]
+tests/test_person_search_and_intake.py::test_contact_verification_is_facility_scoped PASSED [ 80%]
+tests/test_episode_model.py::test_list_episodes_is_facility_scoped_and_denial_is_audited PASSED [100%]
+============================== 5 passed in 4.59s ==============================
+
+===== Full backend suite =====
+88 passed in 22.56s
+ruff: All checks passed!
+mypy: Success: no issues found in 33 source files
+
+===== Frontend =====
+typecheck: clean
+      Tests  32 passed (32)
+dist/assets/index-DK6LAe-c.js                                 367.42 kB │ gzip: 115.13 kB
