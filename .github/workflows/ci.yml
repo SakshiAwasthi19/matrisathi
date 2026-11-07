@@ -1,9 +1,5 @@
 name: CI
 
-# Config only, per this repo's current stage: this workflow is not yet
-# executed anywhere — the project has no git remote/host connected yet.
-# It runs once that's set up.
-
 on:
   push:
     branches: [main]
