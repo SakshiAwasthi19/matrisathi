@@ -8,6 +8,7 @@ import { EnvBanner } from "./components/EnvBanner";
 import { PageState } from "./components/PageState";
 import { Button } from "./components/ui/button";
 import { queryClient } from "./lib/queryClient";
+import { LocalContacts } from "./pages/LocalContacts";
 import { Login } from "./pages/Login";
 import { MotherRegister } from "./pages/MotherRegister";
 import { PregnancyView } from "./pages/PregnancyView";
@@ -135,6 +136,7 @@ export function App() {
             >
               <Route index element={<Today />} />
               <Route path="mothers" element={<MotherRegister />} />
+              <Route path="contacts" element={<LocalContacts />} />
               <Route path="episodes/:episodeId" element={<PregnancyView />} />
             </Route>
             <Route path="*" element={<NotFound />} />

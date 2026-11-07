@@ -3,6 +3,12 @@
 // Vercel itself; see README "Deploying a staging environment").
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000/api/v1";
 
+/** Download link for a private file. The API checks the session and the
+ * file's facility on every request; the link itself grants nothing. */
+export function fileUrl(fileId: string): string {
+  return `${API_BASE}/files/${fileId}`;
+}
+
 // The auth session rides on httpOnly cookies (set by the API), never in
 // localStorage or a JS-readable cookie — this frontend never touches the
 // token value directly, it just needs `credentials: "include"` so the
@@ -367,6 +373,203 @@ export const careApi = {
       outcome,
       closure_reason: closureReason,
     }),
+};
+
+// --- Phase 1 records (W2-A4) -------------------------------------------------------
+
+export interface FileObject {
+  id: string;
+  subject_person_id: string;
+  original_filename: string;
+  content_type: string;
+  size_bytes: number;
+  created_at: string;
+}
+
+export interface Investigation {
+  id: string;
+  episode_id: string;
+  name: string;
+  status: "REQUESTED" | "PERFORMED" | "RECEIVED" | "REVIEWED";
+  requested_on: string | null;
+  performed_on: string | null;
+  received_at: string | null;
+  source: string | null;
+  file_id: string | null;
+  reviewed_at: string | null;
+  reviewed_by_name: string | null;
+  version: number;
+}
+
+export type PrescriptionSource = "PAPER_PRESCRIPTION" | "MCP_CARD" | "DISCHARGE_SUMMARY" | "OTHER_DOCUMENT";
+
+export interface Prescription {
+  id: string;
+  episode_id: string;
+  source: PrescriptionSource;
+  source_file_id: string | null;
+  issued_on: string | null;
+  recorded_by_name: string | null;
+  instruction_status: "UNREVIEWED" | "CONFIRMED" | "UNCLEAR";
+  confirmed_instruction: string | null;
+  reviewed_by_name: string | null;
+  reviewed_at: string | null;
+  reminder_enabled: boolean;
+  reminder_start: string | null;
+  reminder_end: string | null;
+  created_at: string;
+  version: number;
+}
+
+export type ObservationSource = "MEASURED_HERE" | "OUTSIDE_RECORD" | "REPORTED_BY_FAMILY";
+export type CorrectionReason = "TYPING_ERROR" | "WRONG_PERSON" | "WRONG_DATE" | "WRONG_UNIT" | "OTHER";
+
+export interface Observation {
+  id: string;
+  episode_id: string;
+  kind: "MEASUREMENT" | "CLINICIAN_FINDING";
+  name: string;
+  value_text: string;
+  unit: string | null;
+  observed_on: string | null;
+  source: ObservationSource;
+  recorded_by_name: string | null;
+  corrects_id: string | null;
+  correction_reason: CorrectionReason | null;
+  superseded_at: string | null;
+  created_at: string;
+  version: number;
+}
+
+export interface ObservationInput {
+  kind: "MEASUREMENT" | "CLINICIAN_FINDING";
+  name: string;
+  value_text: string;
+  unit: string | null;
+  observed_on: string | null;
+  source: ObservationSource;
+}
+
+export type ServiceType = "PHC" | "REFERRAL_HOSPITAL" | "TRANSPORT" | "NUTRITION" | "BENEFITS" | "OTHER";
+
+export interface LocalContact {
+  id: string;
+  facility_id: string;
+  service_type: ServiceType;
+  name: string;
+  phone: string;
+  alternate_phone: string | null;
+  landmarks: string | null;
+  availability_note: string | null;
+  verified_by_name: string | null;
+  verified_on: string;
+  stale: boolean;
+  version: number;
+}
+
+export type ReferralStatus = "SENT" | "CONTACTED" | "ATTENDED" | "ADVICE_RECEIVED" | "FOLLOW_UP_COMPLETED" | "CLOSED";
+export type ReferralUrgency = "ROUTINE" | "SOON" | "URGENT";
+export type ReferralClosureReason =
+  | "FAMILY_DECLINED"
+  | "NOT_ATTENDED_AFTER_FOLLOW_UP"
+  | "CARE_TRANSFERRED_ELSEWHERE"
+  | "NO_LONGER_NEEDED_PER_CLINICIAN"
+  | "RECORDED_IN_ERROR";
+
+export interface Referral {
+  id: string;
+  episode_id: string;
+  destination_contact_id: string | null;
+  destination_name: string | null;
+  urgency: ReferralUrgency;
+  clinician_instruction: string | null;
+  referred_by_name: string | null;
+  owner_staff_user_id: string;
+  owner_name: string | null;
+  status: ReferralStatus;
+  contacted_at: string | null;
+  attended_on: string | null;
+  advice_received_at: string | null;
+  advice_file_id: string | null;
+  follow_up_completed_at: string | null;
+  closure_reason: ReferralClosureReason | null;
+  closed_at: string | null;
+  created_at: string;
+  version: number;
+}
+
+export const recordsApi = {
+  uploadFile: (personId: string, file: File) =>
+    request<FileObject>(
+      `/files?subject_person_id=${encodeURIComponent(personId)}&filename=${encodeURIComponent(file.name)}`,
+      { method: "POST", body: file, headers: { "Content-Type": file.type || "application/octet-stream" } },
+    ),
+
+  listInvestigations: (episodeId: string) => request<Investigation[]>(`/pregnancy-episodes/${episodeId}/investigations`),
+  createInvestigation: (
+    episodeId: string,
+    body: { name: string; requested_on?: string | null; received_file_id?: string | null; source?: "ORDERED_HERE" | "OUTSIDE_REPORT" },
+  ) => post<Investigation>(`/pregnancy-episodes/${episodeId}/investigations`, body),
+  investigationStep: (id: string, step: "performed" | "received" | "reviewed", expectedVersion: number) =>
+    post<Investigation>(`/investigations/${id}/${step}`, { expected_version: expectedVersion }),
+
+  listPrescriptions: (episodeId: string) => request<Prescription[]>(`/pregnancy-episodes/${episodeId}/prescriptions`),
+  recordPrescription: (
+    episodeId: string,
+    body: { source: PrescriptionSource; source_file_id?: string | null; issued_on?: string | null },
+  ) => post<Prescription>(`/pregnancy-episodes/${episodeId}/prescriptions`, body),
+  reviewPrescription: (
+    id: string,
+    body: {
+      expected_version: number;
+      decision: "CONFIRMED" | "UNCLEAR";
+      confirmed_instruction?: string | null;
+      reminder_enabled?: boolean;
+      reminder_start?: string | null;
+      reminder_end?: string | null;
+    },
+  ) => post<Prescription>(`/prescriptions/${id}/review`, body),
+
+  listObservations: (episodeId: string, includeSuperseded: boolean) =>
+    request<Observation[]>(`/pregnancy-episodes/${episodeId}/observations?include_superseded=${includeSuperseded}`),
+  recordObservation: (episodeId: string, body: ObservationInput) =>
+    post<Observation>(`/pregnancy-episodes/${episodeId}/observations`, body),
+  correctObservation: (id: string, body: ObservationInput & { expected_version: number; correction_reason: CorrectionReason }) =>
+    post<Observation>(`/observations/${id}/correct`, body),
+
+  listContacts: (facilityId: string) => request<LocalContact[]>(`/local-contacts?facility_id=${encodeURIComponent(facilityId)}`),
+  createContact: (body: {
+    facility_id: string;
+    service_type: ServiceType;
+    name: string;
+    phone: string;
+    alternate_phone?: string | null;
+    landmarks?: string | null;
+    availability_note?: string | null;
+  }) => post<LocalContact>("/local-contacts", body),
+  verifyContact: (id: string, expectedVersion: number) =>
+    post<LocalContact>(`/local-contacts/${id}/verify`, { expected_version: expectedVersion }),
+
+  listReferrals: (episodeId: string) => request<Referral[]>(`/pregnancy-episodes/${episodeId}/referrals`),
+  createReferral: (
+    episodeId: string,
+    body: {
+      destination_contact_id?: string | null;
+      destination_name?: string | null;
+      urgency: ReferralUrgency;
+      clinician_instruction?: string | null;
+    },
+  ) => post<Referral>(`/pregnancy-episodes/${episodeId}/referrals`, body),
+  referralStep: (
+    id: string,
+    body: {
+      expected_version: number;
+      to: Exclude<ReferralStatus, "SENT">;
+      attended_on?: string | null;
+      advice_file_id?: string | null;
+      closure_reason?: ReferralClosureReason | null;
+    },
+  ) => post<Referral>(`/referrals/${id}/step`, body),
 };
 
 export const api = {

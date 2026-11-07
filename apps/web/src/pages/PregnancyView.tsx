@@ -17,6 +17,10 @@ import { AppointmentList } from "../components/care/AppointmentList";
 import { CarePlanPanel } from "../components/care/CarePlanPanel";
 import { DatingCard } from "../components/care/DatingCard";
 import { EpisodeTasks } from "../components/care/EpisodeTasks";
+import { ObservationsPanel } from "../components/records/ObservationsPanel";
+import { PrescriptionsPanel } from "../components/records/PrescriptionsPanel";
+import { ReferralsPanel } from "../components/records/ReferralsPanel";
+import { ReportsPanel } from "../components/records/ReportsPanel";
 
 const DATING_STATUS: Record<string, StatusKind> = {
   UNKNOWN: "unknown",
@@ -208,6 +212,15 @@ export function PregnancyView() {
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <AppointmentList episodeId={e.id} />
         <EpisodeTasks episodeId={e.id} />
+      </div>
+      {/* Phase 1 records (W2-B2). */}
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <ReportsPanel episodeId={e.id} personId={e.mother_person_id} isClinician={isClinician} />
+        <PrescriptionsPanel episodeId={e.id} personId={e.mother_person_id} isClinician={isClinician} />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <ObservationsPanel episodeId={e.id} isClinician={isClinician} />
+        <ReferralsPanel episodeId={e.id} personId={e.mother_person_id} facilityId={e.facility_id} isClinician={isClinician} />
       </div>
       <p className="text-sm text-muted">{t("episode.reloadNote")}</p>
     </div>
