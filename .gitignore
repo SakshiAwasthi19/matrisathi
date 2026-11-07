@@ -17,3 +17,6 @@ dist/
 
 # OS
 .DS_Store
+
+# Local private file store (development only; FILE_STORE_BACKEND=local)
+.data/

@@ -14,13 +14,14 @@ dependencies = [
     "pyjwt==2.9.0",
     "pwdlib[argon2]==0.2.1",
     "python-dotenv==1.2.3",
+    # Supabase Storage HTTP API (private file store on staging; W2-A1).
+    "httpx==0.27.2",
 ]
 
 [dependency-groups]
 dev = [
     "pytest==8.3.3",
     "pytest-asyncio==0.24.0",
-    "httpx==0.27.2",
     "ruff==0.6.9",
     "mypy==1.11.2",
 ]

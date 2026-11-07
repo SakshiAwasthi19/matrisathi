@@ -53,6 +53,14 @@ class Settings(BaseSettings):
     def cors_allowed_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
 
+    # Private file storage (W2-A1, T009). "local" writes under
+    # file_store_local_root (development and tests only); "supabase" uses the
+    # Supabase Storage HTTP API with the service-role key, server side only.
+    # Outside development the API refuses to start unless it is "supabase".
+    file_store_backend: str = "local"
+    file_store_local_root: str = ".data/files"
+    supabase_storage_bucket: str = "matrisathi-files"
+
     # D07 (patient/caregiver access) is not decided. Until it is, every
     # patient/caregiver access check answers "no", whatever grants exist.
     patient_access_enabled: bool = False

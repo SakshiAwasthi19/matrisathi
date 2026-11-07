@@ -1,0 +1,94 @@
+"""State-transition rules for Phase 1 records (T008), as plain functions.
+
+Routers call `check_transition` before changing a status. It rejects any
+move not listed here, and any clinician-only move by a non-clinician.
+Clinician-only moves record clinical decisions; they never compute one.
+"""
+
+from collections.abc import Iterable, Mapping
+from enum import Enum
+
+from app.models.care import AppointmentStatus, CarePlanStatus, InvestigationStatus, TaskStatus
+
+# One place to change who counts as a clinician (Phase 1 plan section 5;
+# confirm with the tech lead (D04) and the doctor (M008 question 10)).
+CLINICIAN_ROLES: frozenset[str] = frozenset({"DOCTOR"})
+
+A = AppointmentStatus
+APPOINTMENT_TRANSITIONS: Mapping[Enum, frozenset[Enum]] = {
+    A.REQUESTED: frozenset({A.CONFIRMED, A.CANCELLED}),
+    A.CONFIRMED: frozenset({A.ATTENDED, A.MISSED, A.RESCHEDULED, A.CANCELLED}),
+    # Final states: a reschedule creates a new appointment linked by
+    # previous_appointment_id; the old one is kept as it was.
+    A.ATTENDED: frozenset(),
+    A.MISSED: frozenset(),
+    A.RESCHEDULED: frozenset(),
+    A.CANCELLED: frozenset(),
+}
+
+T = TaskStatus
+TASK_TRANSITIONS: Mapping[Enum, frozenset[Enum]] = {
+    T.NEW: frozenset({T.ASSIGNED, T.CANCELLED}),
+    T.ASSIGNED: frozenset({T.AWAITING_PATIENT, T.COMPLETED, T.CANCELLED, T.ASSIGNED}),  # reassignment
+    T.AWAITING_PATIENT: frozenset({T.ASSIGNED, T.COMPLETED, T.CANCELLED}),
+    T.COMPLETED: frozenset(),
+    T.CANCELLED: frozenset(),
+}
+
+Inv = InvestigationStatus
+INVESTIGATION_TRANSITIONS: Mapping[Enum, frozenset[Enum]] = {
+    # An outside report can arrive without a known request or performed
+    # date, so REQUESTED -> RECEIVED is allowed directly.
+    Inv.REQUESTED: frozenset({Inv.PERFORMED, Inv.RECEIVED}),
+    Inv.PERFORMED: frozenset({Inv.RECEIVED}),
+    Inv.RECEIVED: frozenset({Inv.REVIEWED}),
+    Inv.REVIEWED: frozenset(),
+}
+
+P = CarePlanStatus
+CARE_PLAN_TRANSITIONS: Mapping[Enum, frozenset[Enum]] = {
+    P.ACTIVE: frozenset({P.SUPERSEDED, P.CANCELLED}),
+    P.SUPERSEDED: frozenset(),
+    P.CANCELLED: frozenset(),
+}
+
+# (from, to) moves that only a clinician may make.
+CLINICIAN_ONLY: frozenset[tuple[Enum, Enum]] = frozenset(
+    {
+        (Inv.RECEIVED, Inv.REVIEWED),  # marking a report reviewed (F009)
+        (P.ACTIVE, P.SUPERSEDED),  # replacing a published plan (F005)
+        (P.ACTIVE, P.CANCELLED),
+    }
+)
+
+
+class TransitionError(ValueError):
+    """The move is not allowed from the current state."""
+
+
+class ClinicianOnlyError(PermissionError):
+    """The move is allowed, but only for a clinician."""
+
+
+class StaleVersionError(Exception):
+    """The record changed since the caller read it (optimistic concurrency)."""
+
+
+def is_clinician(roles: Iterable[str]) -> bool:
+    return any(role in CLINICIAN_ROLES for role in roles)
+
+
+def check_transition(
+    transitions: Mapping[Enum, frozenset[Enum]], current: Enum, target: Enum, roles: Iterable[str]
+) -> None:
+    """Raises TransitionError or ClinicianOnlyError; returns None if allowed."""
+    if target not in transitions.get(current, frozenset()):
+        raise TransitionError(f"{current.value} -> {target.value} is not allowed")
+    if (current, target) in CLINICIAN_ONLY and not is_clinician(roles):
+        raise ClinicianOnlyError(f"{current.value} -> {target.value} is a clinician-only action")
+
+
+def check_version(current_version: int, expected_version: int) -> None:
+    """Raises StaleVersionError unless the caller saw the current version."""
+    if current_version != expected_version:
+        raise StaleVersionError(f"expected version {expected_version}, record is at {current_version}")

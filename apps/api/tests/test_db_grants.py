@@ -13,8 +13,18 @@ NO_DELETE = {"SELECT", "INSERT", "UPDATE"}
 APPEND_ONLY = {"SELECT", "INSERT"}
 NONE: set[str] = set()
 
+READ_ONLY = {"SELECT"}
+INSERT_ONLY = {"SELECT", "INSERT"}
+
 EXPECTED: dict[str, set[str]] = {
     "alembic_version": NONE,  # F8: migrator only
+    "appointment": NO_DELETE,
+    "care_plan": NO_DELETE,
+    "care_plan_template": READ_ONLY,  # clinical templates: never edited by the app
+    "care_plan_template_item": READ_ONLY,
+    "care_task": NO_DELETE,
+    "file_object": INSERT_ONLY,  # a stored file record never changes
+    "investigation": NO_DELETE,
     "audit_event": APPEND_ONLY,  # history cannot be changed
     "caregiver_grant": NO_DELETE,  # revoked, never deleted
     "contact_method": RW,
