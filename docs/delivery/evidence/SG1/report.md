@@ -86,7 +86,7 @@ Expected results are copied from the tracker's Acceptance sheet. **Actual** resu
 - **Steps:** create/read records; trigger a denied request; try UPDATE/DELETE using the runtime DB role.
 - **Expected:** successful and denied events persist with actor/time; runtime cannot alter history; no sensitive payloads.
 - **Actual: Pass, 9/9.** `test_audit.py` (4): one audit row per create and read; denied access writes a DENIED row; the audit row survives a rollback of the request; the app role gets "permission denied" on UPDATE and DELETE of `audit_event`. `test_app_db_role_cannot_run_ddl` (5 cases): the app role cannot CREATE/ALTER/DROP tables, create a schema or an index.
-- **But see finding F8:** the app role can write to `alembic_version`.
+- **Finding F8** (app role could write `alembic_version`) is fixed in W1-A6, after this candidate.
 
 ### 3.5 AT05 Repeatable foundation
 
@@ -135,7 +135,7 @@ No CHECK constraints exist. The age-precision rule (exactly one of date of birth
 | App role on `audit_event` | **INSERT, SELECT only** (append-only) |
 | App role can create in schema `public` / create a schema | **No / No** |
 | Tables owned by the app role | **0** |
-| App role on `alembic_version` | SELECT, INSERT, UPDATE, DELETE: **finding F8** |
+| App role on `alembic_version` | SELECT, INSERT, UPDATE, DELETE at `48f6e0e`: **finding F8**, fixed in W1-A6 (none after `b2f8c41d9e02`) |
 | Grants for new tables | Written by hand in each migration; there are **no default privileges**. |
 
 **Correction to the previous report:** its section 9 said `ALTER DEFAULT PRIVILEGES` automatically grants future tables to the app role. That was wrong: no migration contains it (checked 2026-11-07). New tables need an explicit grant; W2-A1 proposes default privileges or a migration helper.
@@ -153,7 +153,7 @@ No CHECK constraints exist. The age-precision rule (exactly one of date of birth
 | D04-F2 | Login throttling is per username only (lock-out by anyone who knows a username) | Open; tech lead question in D04 |
 | D04-F3 | `Idempotency-Key` header optional on create endpoints | Open; tech lead question in D04 |
 | D04-F4–F7 | Minor (audit event of refresh reuse not asserted; stale code comment; access token valid ≤15 min after logout; CORS lacks PATCH) | Open, low |
-| **F8 (new)** | The app role can UPDATE/DELETE `alembic_version` (granted by `0002`'s "all tables" grant). A compromised app process could falsify the recorded schema version and confuse later migrations. | **Open.** Fix is a one-line `REVOKE` in a new migration plus a test; it is a database-role change, so it needs the developer's approval. Proposed for the next Dev A slot. |
+| **F8** | The app role could UPDATE/DELETE `alembic_version` (granted by `0002`'s "all tables" grant), so a compromised app process could falsify the recorded schema version. | **Fixed** in W1-A6 (migration `b2f8c41d9e02` revokes all app-role privileges on it; `test_app_db_role_has_no_access_to_alembic_version`). Not in candidate `48f6e0e`; included from the next candidate. |
 | Episode model | "Select & create episode" always opened a new episode | **Fixed** in W1-A5 (D13 option A) |
 | Staging defaults | Committed seed password, app-role password and JWT secret would have worked on staging; migrations ran in the web start command | **Fixed** in W1-A4 |
 
@@ -174,7 +174,7 @@ No CHECK constraints exist. The age-precision rule (exactly one of date of birth
 2. **Deploy staging** (`docs/delivery/staging.md`) and record section 6 there: `/health` shows `staging`, the committed password fails, the app role cannot create, the web app shows the STAGING banner and deep links load.
 3. **AT05 on staging:** fresh checkout, browser login, register, open episode, reload, restart; record it here with the SHA.
 4. **Browser screenshots** at 360 px and 1280 px (synthetic data only) into `screenshots/`.
-5. **Decide F8** (approve the REVOKE migration or accept the risk for the pilot).
+5. Re-run section 2 at a candidate that includes W1-A6 (F8 fix).
 6. The reviews in section 6.
 
 **Tracker cells to update by hand** (the developer maintains the workbook): Acceptance sheet AT01–AT04 "Pass (local, `48f6e0e`, 2026-11-07; CI pending)"; AT05 "Blocked: staging not deployed; local fresh-checkout pass at `48f6e0e`".

@@ -2,7 +2,7 @@
 
 | Phase | Gate | Status | Dev A tasks accepted | Dev B tasks accepted | ATs pass / required | Pilot checks pass / required | Open decisions | Blockers |
 |---|---|---|---|---|---|---|---|---|
-| 0 Foundation | SG0+SG1 | In progress | 0/5 | 0/8 | 0/5 | 0/2 | D01 D02 D03 D04 D13 D14 D15 | None for code. Merges: developer approves until D03/D15. |
+| 0 Foundation | SG0+SG1 | In progress | 0/6 | 0/8 | 0/5 | 0/2 | D01 D02 D03 D04 D13 D14 D15 | None for code. Merges: developer approves until D03/D15. |
 | 1 Pregnancy care | SG2 | Not started | 0/5 | 0/5 | 0/6 | 0/6 | D05 D07 | Phase 0 gate |
 | 2 Messaging | SG3 | Not started | 0/4 | 0/4 | 0/4 | 0/2 | D06 D08 | Phase 1 gate; WhatsApp verification lead time |
 | 3 Birth & postpartum | SG4 | Not started | 0/4 | 0/4 | 0/5 | 0/3 | — | Phase 2 gate |
