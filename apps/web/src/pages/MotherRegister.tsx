@@ -1,7 +1,7 @@
 import { Search, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { GuidePanel } from "../components/GuidePanel";
 import { PageHeader } from "../components/PageHeader";
 import { cn } from "../lib/utils";
@@ -13,7 +13,13 @@ type Mode = "find" | "register";
 export function MotherRegister() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mode, setMode] = useState<Mode>("find");
+  // A top-bar search always lands on the Find tab.
+  const quickFind = (location.state as { quickFind?: string } | null)?.quickFind;
+  useEffect(() => {
+    if (quickFind) setMode("find");
+  }, [quickFind]);
   const openEpisode = (episodeId: string) => navigate(`/episodes/${episodeId}`);
 
   const tab = (value: Mode, label: string, Icon: typeof Search) => (

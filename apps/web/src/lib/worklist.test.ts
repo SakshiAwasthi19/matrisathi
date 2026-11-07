@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CareTask } from "../api/client";
-import { countByKind, groupTasks, localISODate } from "./worklist";
+import { countByKind, filterTasks, groupByMother, groupTasks, localISODate, parseQuickFind } from "./worklist";
 
 const task = (id: string, over: Partial<CareTask> = {}): CareTask => ({
   id,
@@ -56,5 +56,34 @@ describe("worklist grouping", () => {
 
   it("formats the local date", () => {
     expect(localISODate(new Date(2026, 0, 5))).toBe("2026-01-05");
+  });
+});
+
+describe("overview helpers", () => {
+  it("groups by mother in first-seen order", () => {
+    const g = groupByMother([task("a", { episode_id: "e1" }), task("b", { episode_id: "e2" }), task("c", { episode_id: "e1" })]);
+    expect(g.map((x) => [x.episodeId, x.tasks.map((t) => t.id)])).toEqual([
+      ["e1", ["a", "c"]],
+      ["e2", ["b"]],
+    ]);
+  });
+
+  it("filters by overdue, today, unassigned and kind", () => {
+    const tasks = [
+      task("a", { overdue: true, status: "NEW" }),
+      task("b", { due_at: "2026-11-07T10:00:00Z", kind: "HELP_REQUEST" }),
+      task("c", { status: "NEW", kind: "HELP_REQUEST" }),
+    ];
+    expect(filterTasks(tasks, "overdue", null, "2026-11-07").map((t) => t.id)).toEqual(["a"]);
+    expect(filterTasks(tasks, "today", null, "2026-11-07").map((t) => t.id)).toEqual(["b"]);
+    expect(filterTasks(tasks, "unassigned", null, "2026-11-07").map((t) => t.id)).toEqual(["a", "c"]);
+    expect(filterTasks(tasks, null, "HELP_REQUEST", "2026-11-07").map((t) => t.id)).toEqual(["b", "c"]);
+  });
+
+  it("reads quick-find text as a phone number or a name", () => {
+    expect(parseQuickFind("  ")).toBeNull();
+    expect(parseQuickFind("+91 98765-43210")).toEqual({ phone: "+919876543210" });
+    expect(parseQuickFind("Sunita Devi")).toEqual({ full_name: "Sunita Devi" });
+    expect(parseQuickFind("123")).toEqual({ full_name: "123" });
   });
 });

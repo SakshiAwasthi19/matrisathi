@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link } from "react-router";
 import { SERIES } from "../lib/chartPalette";
 import { cn } from "../lib/utils";
 
@@ -14,6 +15,8 @@ import { cn } from "../lib/utils";
 export interface Point {
   label: string;
   value: number;
+  /** Optional link (BarList rows become links to the matching list). */
+  to?: string;
 }
 
 /** Measured width of a container, so charts draw in real pixels and their
@@ -232,20 +235,33 @@ export function BarList({ data, caption, className }: { data: Point[]; caption: 
   return (
     <div className={cn("space-y-3", className)}>
       <ul className="space-y-3" aria-label={caption}>
-        {data.map((d) => (
-          <li key={d.label} className="group">
-            <div className="mb-1.5 flex items-baseline justify-between gap-3 text-sm">
-              <span className="truncate text-ink-2">{d.label}</span>
-              <span className="tabular font-semibold text-ink">{d.value}</span>
-            </div>
-            <div className="h-2 rounded-full bg-subtle">
-              <div
-                className="h-2 rounded-full transition-[width] duration-500"
-                style={{ width: `${(d.value / max) * 100}%`, background: SERIES[0], minWidth: d.value ? 6 : 0 }}
-              />
-            </div>
-          </li>
-        ))}
+        {data.map((d) => {
+          const row = (
+            <>
+              <div className="mb-1.5 flex items-baseline justify-between gap-3 text-sm">
+                <span className={cn("truncate text-ink-2", d.to && "group-hover:text-brand group-hover:underline")}>{d.label}</span>
+                <span className="tabular font-semibold text-ink">{d.value}</span>
+              </div>
+              <div className="h-2 rounded-full bg-subtle">
+                <div
+                  className="h-2 rounded-full transition-[width] duration-500"
+                  style={{ width: `${(d.value / max) * 100}%`, background: SERIES[0], minWidth: d.value ? 6 : 0 }}
+                />
+              </div>
+            </>
+          );
+          return (
+            <li key={d.label}>
+              {d.to ? (
+                <Link to={d.to} className="group -mx-2 block rounded-lg px-2 py-1 transition-colors hover:bg-subtle/60">
+                  {row}
+                </Link>
+              ) : (
+                row
+              )}
+            </li>
+          );
+        })}
       </ul>
       <SrTable caption={caption} headers={["Category", "Count"]} rows={data.map((d) => [d.label, d.value])} />
     </div>

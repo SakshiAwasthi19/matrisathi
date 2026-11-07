@@ -9,7 +9,6 @@
   "nav": {
     "label": "Main",
     "mothers": "Find or register a mother",
-    "signedInAs": "Signed in as {{name}}",
     "signOut": "Sign out",
     "signingOut": "Signing out…",
     "today": "Today",
@@ -38,7 +37,9 @@
       "COORDINATOR": "Coordinator",
       "DOCTOR": "Doctor"
     },
-    "mothersShort": "Mothers"
+    "mothersShort": "Mothers",
+    "quickFindLabel": "Find a mother by phone number or name",
+    "enterKey": "Enter"
   },
   "common": {
     "loading": "Loading…",
@@ -322,7 +323,15 @@
       "groupOverdue": "Overdue",
       "groupToday": "Due today",
       "groupLater": "Coming up",
-      "groupUndated": "No due date"
+      "groupUndated": "No due date",
+      "filter": {
+        "overdue": "Overdue",
+        "today": "Due today",
+        "unassigned": "Not assigned"
+      },
+      "filteredBy": "Showing only",
+      "clearFilter": "Remove filter: {{label}}",
+      "emptyFiltered": "No open tasks match this filter."
     }
   },
   "records": {
@@ -553,7 +562,8 @@
   },
   "toast": {
     "saved": "Saved",
-    "contactConfirmed": "Contact number confirmed"
+    "contactConfirmed": "Contact number confirmed",
+    "assigned": "Assigned to you"
   },
   "sample": {
     "badge": "Preview · sample data",
@@ -578,15 +588,13 @@
     "kpiUnassigned_one": "{{count}} without an owner",
     "kpiUnassigned_other": "{{count}} without an owner",
     "upNext": "Up next",
-    "upNextBody": "Overdue first, then by due date.",
+    "upNextBody": "Grouped by mother: overdue first, then by due date.",
     "viewAll": "View all",
     "upNextEmpty": "Nothing open right now",
     "upNextEmptyBody": "New follow-ups will appear here.",
     "quickActions": "Quick actions",
     "qaFind": "Find or register a mother",
     "qaFindBody": "Search first, so no one is registered twice",
-    "qaToday": "Today's work",
-    "qaTodayBody": "Your tasks, grouped by when they are due",
     "qaContacts": "Local contacts",
     "qaContactsBody": "Transport, hospitals and services nearby",
     "qaUrgent": "Urgent help page",
@@ -599,7 +607,9 @@
     "visits": "Planned visits per week",
     "visitsBody": "Attended and missed. Missed visits create an administrative follow-up.",
     "attended": "Attended",
-    "missed": "Missed"
+    "missed": "Missed",
+    "moreTasks_one": "+{{count}} more task",
+    "moreTasks_other": "+{{count}} more tasks"
   },
   "landing": {
     "signIn": "Staff sign in",

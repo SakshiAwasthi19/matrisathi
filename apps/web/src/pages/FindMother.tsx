@@ -1,6 +1,7 @@
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Building2, HeartPulse, Phone, Plus, Search } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { api, ApiError, existingEpisodeId, type Person } from "../api/client";
 import { Avatar } from "../components/Avatar";
@@ -12,6 +13,7 @@ import { Alert, StatusBadge } from "../components/ui/status";
 import { formatAge } from "../lib/age";
 import { attemptKey, clearAttempt, createAttemptStore } from "../lib/attempts";
 import { episodeAction, type EpisodeAction } from "../lib/episodes";
+import { parseQuickFind } from "../lib/worklist";
 import { useSession } from "../state/session";
 
 export function FindMother({ onEpisodeCreated }: { onEpisodeCreated: (episodeId: string) => void }) {
@@ -90,6 +92,23 @@ export function FindMother({ onEpisodeCreated }: { onEpisodeCreated: (episodeId:
     (openEpisode.isPending && openEpisode.variables?.person.id) ||
     (verify.isPending && verify.variables?.id) ||
     null;
+
+  // Text typed in the top-bar search arrives in router state: fill the form,
+  // run the search, then clear the state so a reload doesn't repeat it.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const quickFind = (location.state as { quickFind?: string } | null)?.quickFind;
+  useEffect(() => {
+    if (!quickFind) return;
+    const params = parseQuickFind(quickFind);
+    navigate(".", { replace: true, state: null });
+    if (!params) return;
+    setPhone(params.phone ?? "");
+    setFullName(params.full_name ?? "");
+    setFormError(null);
+    search.mutate(params);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per hand-off
+  }, [quickFind]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();

@@ -132,22 +132,37 @@ function SidebarBody({ items, onNavigate }: { items: NavItem[]; onNavigate?: () 
   );
 }
 
-/** Quick way into the register from any page. */
+/** Search from any page. The text travels in router state, never in the URL,
+ * so phone numbers and names stay out of browser history. */
 function QuickFind({ className }: { className?: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [q, setQ] = useState("");
   return (
-    <button
-      type="button"
-      onClick={() => navigate("/mothers")}
+    <form
+      role="search"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!q.trim()) return;
+        navigate("/mothers", { state: { quickFind: q.trim() } });
+        setQ("");
+      }}
       className={cn(
-        "flex min-h-10 w-full max-w-sm items-center gap-2.5 rounded-[10px] border border-line bg-surface px-3 text-left text-sm text-faint shadow-card transition-colors hover:border-line-strong hover:text-muted",
+        "flex min-h-10 w-full max-w-sm items-center gap-2.5 rounded-[10px] border border-line bg-surface px-3 shadow-card transition-colors focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft hover:border-line-strong",
         className,
       )}
     >
-      <Search aria-hidden className="size-4" />
-      <span className="flex-1 truncate">{t("nav.quickFind")}</span>
-    </button>
+      <Search aria-hidden className="size-4 shrink-0 text-faint" />
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        aria-label={t("nav.quickFindLabel")}
+        placeholder={t("nav.quickFind")}
+        autoComplete="off"
+        className="min-w-0 flex-1 bg-transparent py-2 text-sm text-ink outline-none placeholder:text-faint"
+      />
+      <kbd className="hidden rounded border border-line bg-subtle px-1.5 text-[0.6875rem] font-semibold text-faint xl:inline">{t("nav.enterKey")}</kbd>
+    </form>
   );
 }
 
@@ -234,11 +249,6 @@ export function AppShell() {
             >
               <Search aria-hidden className="size-5" />
             </Link>
-            {staff && (
-              <div className="hidden items-center gap-2 lg:ml-auto lg:flex">
-                <span className="text-sm text-muted">{t("nav.signedInAs", { name: staff.full_name })}</span>
-              </div>
-            )}
           </div>
         </div>
 

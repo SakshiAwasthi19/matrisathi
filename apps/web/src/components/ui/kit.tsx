@@ -1,6 +1,7 @@
-import { Sparkles, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, Sparkles, type LucideIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import { cn } from "../../lib/utils";
 
 /** Small label pill. Tones are decorative (identity), never a status. */
@@ -62,6 +63,7 @@ export function StatTile({
   icon: Icon,
   sample,
   tone = "brand",
+  to,
 }: {
   label: string;
   value: React.ReactNode;
@@ -69,12 +71,17 @@ export function StatTile({
   icon?: LucideIcon;
   sample?: boolean;
   tone?: "brand" | "accent" | "neutral";
+  /** Makes the whole tile a link (e.g. to the filtered worklist). */
+  to?: string;
 }) {
   const chip = { brand: "bg-brand-tint text-brand", accent: "bg-accent-soft text-accent", neutral: "bg-subtle text-ink-2" }[tone];
-  return (
-    <div className="flex flex-col gap-3 rounded-[var(--radius-card)] border border-line bg-surface p-4 shadow-card transition-shadow hover:shadow-raised md:p-5">
+  const body = (
+    <>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium text-muted">{label}</span>
+        <span className="inline-flex items-center gap-1 text-sm font-medium text-muted">
+          {label}
+          {to && <ArrowUpRight aria-hidden className="size-3.5 text-faint opacity-0 transition-opacity group-hover:opacity-100" />}
+        </span>
         {Icon && (
           <span className={cn("inline-flex size-8 items-center justify-center rounded-lg", chip)}>
             <Icon aria-hidden className="size-4" />
@@ -86,7 +93,16 @@ export function StatTile({
         {hint}
         {sample && <SampleBadge />}
       </div>
-    </div>
+    </>
+  );
+  const cls =
+    "group flex flex-col gap-3 rounded-[var(--radius-card)] border border-line bg-surface p-4 shadow-card transition-[box-shadow,border-color] hover:shadow-raised md:p-5";
+  return to ? (
+    <Link to={to} className={cn(cls, "hover:border-line-strong")}>
+      {body}
+    </Link>
+  ) : (
+    <div className={cls}>{body}</div>
   );
 }
 
