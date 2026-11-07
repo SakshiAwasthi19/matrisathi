@@ -25,7 +25,7 @@ Weeks 7–8 now fall in the holiday period. Agree the release-candidate date wit
 
 | Task ID | Week | Lane | Work package | Planned h | Actual h | Status | PR | Merge SHA | CI run | AT / P checks | Evidence | Feedback IDs | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| W1-A1 | 1 | Dev A | Protect main, task branches, first green CI tied to a SHA | 6 | | Not started | | | | AT05 | | | CI already runs on `pull_request`. Needs PR template, `branching.md`, branch protection (human). |
+| W1-A1 | 1 | Dev A | Protect main, task branches, first green CI tied to a SHA | 6 | 1 (est.) | Ready for review | | | | AT05 | `.github/pull_request_template.md`, `docs/delivery/branching.md` | | Stale CI comment removed. Pending: push access (403), PR CI run, merge SHA + run link, branch protection applied and direct push to `main` rejected (developer verifies). |
 | W1-A2 | 1 | Dev A | Prove a green backend CI run on a PR (reduced) | 4 | | Not started | | | | | | | Reduced 7 Nov: backend CI already green on `main` (`fa515a9`). Saved time goes to W1-A4. |
 | W1-A3 | 1 | Dev A | D04 auth, tenant and audit design proposal | 5 | | Not started | | | | | | | Draft content exists in SG1 report §9. |
 | W1-A4 | 1 | Dev A | Harden and deploy synthetic-only backend staging | 6 (+ time saved on W1-A2, W1-B1) | | Not started | | | | AT05 | | | Scope grown 7 Nov: all committed defaults refuse under `ENV=staging`, migrations as a release step, DDL test, separate Supabase project. |
