@@ -29,7 +29,8 @@ EXPECTED: dict[str, set[str]] = {
     "observation": NO_DELETE,  # corrections supersede; the earlier value is kept
     "prescription": NO_DELETE,
     "referral": NO_DELETE,
-    "audit_event": APPEND_ONLY,  # history cannot be changed
+    "audit_event": APPEND_ONLY,
+    "birth_plan": NO_DELETE,  # history cannot be changed
     "caregiver_grant": NO_DELETE,  # revoked, never deleted
     "contact_method": RW,
     "episode_dating": NO_DELETE,  # superseded, never deleted

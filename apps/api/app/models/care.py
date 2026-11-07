@@ -29,6 +29,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin, uuid_pk
+from app.models.birth_plan import AppointmentFamilyReport
 
 
 def _fk(target: str, nullable: bool = False) -> Any:
@@ -185,6 +186,11 @@ class Appointment(Base, TimestampMixin):
     owner_staff_user_id: Mapped[uuid.UUID | None] = _fk("staff_user.id", nullable=True)
     previous_appointment_id: Mapped[uuid.UUID | None] = _fk("appointment.id", nullable=True)
     status_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # What the family said (F006), kept apart from the staff-recorded status.
+    family_report: Mapped[AppointmentFamilyReport | None] = mapped_column(
+        Enum(AppointmentFamilyReport, name="appointment_family_report"), nullable=True
+    )
+    family_reported_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     version: Mapped[int] = _version()
 
     # The ORM adds "WHERE version = <read value>" to every UPDATE and raises

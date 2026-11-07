@@ -1,7 +1,7 @@
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routers import admin, auth, care, files, people, pregnancies, records
+from app.api.routers import admin, auth, care, files, next_step, people, pregnancies, records
 from app.core.config import settings
 from app.core.startup_checks import check_runtime_settings
 
@@ -15,7 +15,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_allowed_origins_list,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Content-Type", settings.csrf_header_name, "Idempotency-Key"],
 )
 
@@ -27,6 +27,7 @@ api_v1.include_router(admin.router)
 api_v1.include_router(files.router)
 api_v1.include_router(care.router)
 api_v1.include_router(records.router)
+api_v1.include_router(next_step.router)
 app.include_router(api_v1)
 
 
