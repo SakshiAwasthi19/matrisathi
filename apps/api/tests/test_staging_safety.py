@@ -138,6 +138,23 @@ def test_app_db_role_cannot_run_ddl(statement):
             conn.execute(statement)
 
 
+@pytest.mark.parametrize(
+    "statement",
+    [
+        "SELECT version_num FROM alembic_version",
+        "UPDATE alembic_version SET version_num = 'tampered'",
+        "DELETE FROM alembic_version",
+        "INSERT INTO alembic_version (version_num) VALUES ('tampered')",
+    ],
+)
+def test_app_db_role_has_no_access_to_alembic_version(statement):
+    """SG1 finding F8: only the migrator may read or change the recorded schema version."""
+    app_url = os.environ["DATABASE_URL_APP"].replace("postgresql+psycopg://", "postgresql://")
+    with psycopg.connect(app_url, autocommit=True) as conn:
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            conn.execute(statement)
+
+
 # --- /health and CSRF on login/refresh --------------------------------------
 
 
