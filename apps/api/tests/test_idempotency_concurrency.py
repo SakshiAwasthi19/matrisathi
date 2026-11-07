@@ -15,7 +15,7 @@ from tests.factories import make_facility, make_membership, make_org, make_staff
 
 
 def _login(client, username, password="synthetic-password-123"):
-    resp = client.post("/api/v1/auth/login", json={"username": username, "password": password})
+    resp = client.post("/api/v1/auth/login", json={"username": username, "password": password}, headers=CSRF_HEADERS)
     assert resp.status_code == 200
 
 

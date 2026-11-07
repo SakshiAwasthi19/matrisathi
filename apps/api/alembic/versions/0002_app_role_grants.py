@@ -14,6 +14,8 @@ audit row, because the role it connects as is not permitted to.
 """
 
 import os
+import re
+from collections.abc import Mapping
 
 from alembic import op
 
@@ -27,18 +29,44 @@ APP_ROLE = "matrisathi_app"
 # left with the same password that's sitting in this file in git history.
 # Local Docker Postgres isn't reachable from outside the machine, so the
 # default here is fine for that case unchanged.
-APP_ROLE_PASSWORD = os.environ.get("MATRISATHI_APP_DB_PASSWORD", "matrisathi_app_dev_pw")  # noqa: S105
+DEV_APP_ROLE_PASSWORD = "matrisathi_app_dev_pw"  # noqa: S105
+MIN_APP_ROLE_PASSWORD_LENGTH = 16
+# The password is interpolated into SQL below (inside '...' and a $$ block),
+# so only characters that cannot end either quoting are allowed. This also
+# keeps it safe to paste into a connection URL without percent-encoding.
+_SAFE_PASSWORD = re.compile(r"^[A-Za-z0-9_.~-]+$")
+
+
+def resolve_app_role_password(env: str, environ: Mapping[str, str]) -> str:
+    """Development may use the committed default. Anywhere else,
+    MATRISATHI_APP_DB_PASSWORD must be set to a non-default value."""
+    value = environ.get("MATRISATHI_APP_DB_PASSWORD") or ""
+    if env.strip().lower() != "development":
+        if value == DEV_APP_ROLE_PASSWORD or len(value) < MIN_APP_ROLE_PASSWORD_LENGTH:
+            raise RuntimeError(
+                f"Refusing to migrate with ENV={env.strip()!r}: set MATRISATHI_APP_DB_PASSWORD "
+                f"(at least {MIN_APP_ROLE_PASSWORD_LENGTH} characters, not the committed dev password)"
+            )
+    password = value or DEV_APP_ROLE_PASSWORD
+    if not _SAFE_PASSWORD.match(password):
+        raise RuntimeError(
+            "MATRISATHI_APP_DB_PASSWORD may contain only letters, digits and _ . ~ -"
+        )
+    return password
 
 
 def upgrade() -> None:
+    from app.core.config import settings
+
+    app_role_password = resolve_app_role_password(settings.env, os.environ)
     op.execute(
         f"""
         DO $$
         BEGIN
             IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '{APP_ROLE}') THEN
-                CREATE ROLE {APP_ROLE} LOGIN PASSWORD '{APP_ROLE_PASSWORD}';
+                CREATE ROLE {APP_ROLE} LOGIN PASSWORD '{app_role_password}';
             ELSE
-                ALTER ROLE {APP_ROLE} LOGIN PASSWORD '{APP_ROLE_PASSWORD}';
+                ALTER ROLE {APP_ROLE} LOGIN PASSWORD '{app_role_password}';
             END IF;
         END
         $$;

@@ -86,7 +86,15 @@ def _recent_failed_attempts(db: Session, username: str) -> int:
 
 
 @router.post("/login", response_model=StaffOut)
-def login(body: LoginRequest, response: Response, db: Session = Depends(get_db)) -> StaffOut:
+def login(
+    body: LoginRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+    # CSRF header on login too: with SameSite=None cookies (cross-domain
+    # staging), another site could otherwise submit a login form and sign
+    # the victim's browser into an attacker-controlled account.
+    _csrf: None = Depends(require_csrf_header),
+) -> StaffOut:
     throttled = _recent_failed_attempts(db, body.username) >= settings.login_throttle_max_attempts
 
     staff = db.query(StaffUser).filter(StaffUser.username == body.username).first()
@@ -146,6 +154,8 @@ def refresh(
     response: Response,
     db: Session = Depends(get_db),
     refresh_token: str | None = Cookie(default=None),
+    # Without this, a cross-site POST could force a token rotation.
+    _csrf: None = Depends(require_csrf_header),
 ) -> StaffOut:
     if refresh_token is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")

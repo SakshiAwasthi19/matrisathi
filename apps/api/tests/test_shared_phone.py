@@ -5,7 +5,7 @@ SHARED_PHONE = "+919999999999"
 
 
 def _login(client, username, password="synthetic-password-123"):
-    resp = client.post("/api/v1/auth/login", json={"username": username, "password": password})
+    resp = client.post("/api/v1/auth/login", json={"username": username, "password": password}, headers=CSRF_HEADERS)
     assert resp.status_code == 200
 
 
