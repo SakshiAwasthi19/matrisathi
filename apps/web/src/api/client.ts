@@ -572,6 +572,99 @@ export const recordsApi = {
   ) => post<Referral>(`/referrals/${id}/step`, body),
 };
 
+// --- Next step, birth plan, public urgent help (W2-A5, W2-B3) ----------------------
+
+export interface HelpContact {
+  id: string;
+  service_type: string;
+  name: string;
+  phone: string;
+  alternate_phone: string | null;
+  landmarks: string | null;
+  verified_on: string;
+  stale: boolean;
+}
+
+export type AppointmentFamilyReport = "DONE" | "COULD_NOT_GO" | "NEED_HELP";
+export type FamilyReport = "DONE" | "NOT_DONE" | "NEED_HELP";
+
+export interface NextAction {
+  state: "CONFIRMED" | "NONE";
+  appointment_id: string | null;
+  name: string | null;
+  confirmed_for: string | null;
+  location_note: string | null;
+  preparation_text: string | null;
+  is_placeholder: boolean;
+  family_report: AppointmentFamilyReport | null;
+  family_reported_at: string | null;
+  unconfirmed_requests: number;
+  help_contacts: HelpContact[];
+  version: number | null;
+}
+
+export interface BirthPlan {
+  id: string;
+  episode_id: string;
+  chosen_birth_place: HelpContact | null;
+  chosen_birth_place_note: string | null;
+  referral_site: HelpContact | null;
+  referral_site_set_by_name: string | null;
+  companion_name: string | null;
+  transport_arrangement: string | null;
+  landmarks: string | null;
+  primary_contact: HelpContact | null;
+  alternate_contact: HelpContact | null;
+  family_report: FamilyReport | null;
+  family_reported_at: string | null;
+  staff_verified_by_name: string | null;
+  staff_verified_at: string | null;
+  updated_at: string;
+  version: number;
+}
+
+export interface BirthPlanInput {
+  expected_version: number;
+  chosen_birth_place_contact_id: string | null;
+  chosen_birth_place_note: string | null;
+  referral_site_contact_id: string | null;
+  companion_name: string | null;
+  transport_arrangement: string | null;
+  landmarks: string | null;
+  primary_contact_id: string | null;
+  alternate_contact_id: string | null;
+}
+
+export interface UrgentHelp {
+  facility_name: string;
+  contacts: HelpContact[];
+  support_hours: string | null;
+  wording_approved: boolean;
+}
+
+export const nextStepApi = {
+  getNextAction: (episodeId: string) => request<NextAction>(`/pregnancy-episodes/${episodeId}/next-action`),
+  familyReport: (appointmentId: string, expectedVersion: number, report: AppointmentFamilyReport, barrier: Barrier | null) =>
+    post<NextAction>(`/appointments/${appointmentId}/family-report`, {
+      expected_version: expectedVersion,
+      report,
+      barrier,
+    }),
+  getBirthPlan: (episodeId: string) => request<BirthPlan | null>(`/pregnancy-episodes/${episodeId}/birth-plan`),
+  saveBirthPlan: (episodeId: string, body: BirthPlanInput) =>
+    request<BirthPlan>(`/pregnancy-episodes/${episodeId}/birth-plan`, { method: "PUT", body: JSON.stringify(body) }),
+  verifyBirthPlan: (episodeId: string, expectedVersion: number) =>
+    post<BirthPlan>(`/pregnancy-episodes/${episodeId}/birth-plan/verify`, { expected_version: expectedVersion }),
+  birthPlanFamilyReport: (episodeId: string, expectedVersion: number, report: FamilyReport, barrier: Barrier | null) =>
+    post<BirthPlan>(`/pregnancy-episodes/${episodeId}/birth-plan/family-report`, {
+      expected_version: expectedVersion,
+      report,
+      barrier,
+    }),
+  // Public: no session needed.
+  urgentHelp: (facilityId: string) => request<UrgentHelp>(`/public/urgent-help/${encodeURIComponent(facilityId)}`),
+};
+
 export const api = {
   login: (username: string, password: string) =>
     request<Staff>("/auth/login", { method: "POST", body: JSON.stringify({ username, password }) }),

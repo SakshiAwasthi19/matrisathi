@@ -8,7 +8,10 @@ import { EnvBanner } from "./components/EnvBanner";
 import { PageState } from "./components/PageState";
 import { Button } from "./components/ui/button";
 import { queryClient } from "./lib/queryClient";
+import { BirthPlanPrint } from "./pages/BirthPlanPrint";
 import { LocalContacts } from "./pages/LocalContacts";
+import { NextStep } from "./pages/NextStep";
+import { UrgentHelp } from "./pages/UrgentHelp";
 import { Login } from "./pages/Login";
 import { MotherRegister } from "./pages/MotherRegister";
 import { PregnancyView } from "./pages/PregnancyView";
@@ -124,24 +127,44 @@ export function App() {
       <BrowserRouter>
         <EnvBanner />
         <LegacyHashRedirect />
-        <SessionRoot>
-          <Routes>
-            <Route path="/login" element={<LoginRoute />} />
-            <Route
-              element={
-                <RequireAuth>
-                  <AppShell />
-                </RequireAuth>
-              }
-            >
-              <Route index element={<Today />} />
-              <Route path="mothers" element={<MotherRegister />} />
-              <Route path="contacts" element={<LocalContacts />} />
-              <Route path="episodes/:episodeId" element={<PregnancyView />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </SessionRoot>
+        <Routes>
+          {/* Public and signed-out: never waits for the session check (F014). */}
+          <Route path="/urgent-help" element={<UrgentHelp />} />
+          <Route path="/urgent-help/:facilityId" element={<UrgentHelp />} />
+          <Route
+            path="*"
+            element={
+              <SessionRoot>
+                <Routes>
+                  <Route path="/login" element={<LoginRoute />} />
+                  <Route
+                    element={
+                      <RequireAuth>
+                        <AppShell />
+                      </RequireAuth>
+                    }
+                  >
+                    <Route index element={<Today />} />
+                    <Route path="mothers" element={<MotherRegister />} />
+                    <Route path="contacts" element={<LocalContacts />} />
+                    <Route path="episodes/:episodeId" element={<PregnancyView />} />
+                    <Route path="episodes/:episodeId/next-step" element={<NextStep />} />
+                  </Route>
+                  {/* Printable page: signed in, but without the app header. */}
+                  <Route
+                    path="/episodes/:episodeId/birth-plan/print"
+                    element={
+                      <RequireAuth>
+                        <BirthPlanPrint />
+                      </RequireAuth>
+                    }
+                  />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </SessionRoot>
+            }
+          />
+        </Routes>
       </BrowserRouter>
     </QueryClientProvider>
   );
