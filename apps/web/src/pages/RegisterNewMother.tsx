@@ -2,7 +2,14 @@ import { useMutation } from "@tanstack/react-query";
 import { CalendarDays, NotebookPen, UserRound } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, ApiError, type AgePrecision, type Person, type PersonCreateInput } from "../api/client";
+import {
+  api,
+  ApiError,
+  existingEpisodeId,
+  type AgePrecision,
+  type Person,
+  type PersonCreateInput,
+} from "../api/client";
 import { PageState } from "../components/PageState";
 import { Button } from "../components/ui/button";
 import { Card, Section } from "../components/ui/card";
@@ -48,16 +55,25 @@ export function RegisterNewMother({ onEpisodeCreated }: { onEpisodeCreated: (epi
         person = await api.createPerson(input, attemptKey(attempts.current, "person", input));
         setRegisteredPerson(person);
       }
-      const episode = await api.createPregnancyEpisode(
-        person.id,
-        attemptKey(attempts.current, "episode", { person_id: person.id }),
-      );
+      let episodeId: string;
+      try {
+        const episode = await api.createPregnancyEpisode(
+          person.id,
+          attemptKey(attempts.current, "episode", { person_id: person.id }),
+        );
+        episodeId = episode.id;
+      } catch (err) {
+        // Her active episode already exists (D13): open it, never a second one.
+        const existing = existingEpisodeId(err);
+        if (!existing) throw err;
+        episodeId = existing;
+      }
       clearAttempt(attempts.current, "person");
       clearAttempt(attempts.current, "episode");
       setRegisteredPerson(null);
-      return episode;
+      return episodeId;
     },
-    onSuccess: (episode) => onEpisodeCreated(episode.id),
+    onSuccess: (episodeId) => onEpisodeCreated(episodeId),
   });
 
   if (memberships.length === 0) {

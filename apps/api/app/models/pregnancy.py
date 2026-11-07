@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Index, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -20,8 +20,21 @@ class PregnancyEpisodeStatus(str, enum.Enum):
     CLOSED = "CLOSED"
 
 
+ONE_ACTIVE_EPISODE_INDEX = "uq_pregnancy_episode_one_active"
+
+
 class PregnancyEpisode(Base, TimestampMixin):
     __tablename__ = "pregnancy_episode"
+    # D13 (option A): at most one ACTIVE episode per mother, enforced by the
+    # database so concurrent requests cannot both create one.
+    __table_args__ = (
+        Index(
+            ONE_ACTIVE_EPISODE_INDEX,
+            "mother_person_id",
+            unique=True,
+            postgresql_where=text("status = 'ACTIVE'"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = uuid_pk()
     mother_person_id: Mapped[uuid.UUID] = mapped_column(

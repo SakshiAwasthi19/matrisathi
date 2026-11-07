@@ -1,7 +1,7 @@
 # D13: Pregnancy episode model
 
-**Status:** Proposed. **Decides:** manager. **Written:** 2026-11-07 (W1-B8).
-**Blocks:** the second half of W1-A5 (409 on a second active episode, enforced by a database index). The first half (list a mother's episodes, continue an existing active one) is being built now and works under every option below.
+**Status:** Decided 2026-11-07: **option A**, by the developer, to keep Phase 0 on schedule; manager informed (to confirm at the 14 Nov review). **Written:** 2026-11-07 (W1-B8). **Built:** W1-A5.
+**Implemented in W1-A5:** `GET /people/{id}/episodes`, "Continue episode" on the Find screen, 409 with the existing episode's id, and the partial unique index `uq_pregnancy_episode_one_active` (migration `a13d5e0c7f01`).
 
 ## The question
 

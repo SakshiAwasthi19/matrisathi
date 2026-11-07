@@ -1,8 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Phone, Building2, Search } from "lucide-react";
+import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { ArrowRight, Building2, HeartPulse, Phone, Plus, Search } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, ApiError, type Person } from "../api/client";
+import { api, ApiError, existingEpisodeId, type Person } from "../api/client";
 import { Avatar } from "../components/Avatar";
 import { PageState } from "../components/PageState";
 import { Button } from "../components/ui/button";
@@ -11,6 +11,7 @@ import { Field, Input } from "../components/ui/field";
 import { Alert, StatusBadge } from "../components/ui/status";
 import { formatAge } from "../lib/age";
 import { attemptKey, clearAttempt, createAttemptStore } from "../lib/attempts";
+import { episodeAction, type EpisodeAction } from "../lib/episodes";
 import { useSession } from "../state/session";
 
 export function FindMother({ onEpisodeCreated }: { onEpisodeCreated: (episodeId: string) => void }) {
@@ -33,19 +34,42 @@ export function FindMother({ onEpisodeCreated }: { onEpisodeCreated: (episodeId:
     onSuccess: (found) => setResults(found),
   });
 
+  // Each match's episodes, so staff continue her active one (D13) instead of
+  // opening another. Results are capped server-side, so this stays small.
+  const episodeQueries = useQueries({
+    queries: (results ?? []).map((p) => ({
+      queryKey: ["episodes", p.id],
+      queryFn: () => api.listEpisodes(p.id),
+    })),
+  });
+
   const openEpisode = useMutation({
-    mutationFn: async (person: Person) => {
+    mutationFn: async ({ person, action }: { person: Person; action: EpisodeAction | null }) => {
+      if (action?.kind === "continue") return action.episodeId;
       const scope = `episode:${person.id}`;
-      const episode = await api.createPregnancyEpisode(
-        person.id,
-        attemptKey(attempts.current, scope, { person_id: person.id }),
-      );
-      clearAttempt(attempts.current, scope);
-      return episode;
+      try {
+        const episode = await api.createPregnancyEpisode(
+          person.id,
+          attemptKey(attempts.current, scope, { person_id: person.id }),
+        );
+        clearAttempt(attempts.current, scope);
+        return episode.id;
+      } catch (err) {
+        // Someone opened her episode meanwhile: go to it, never make a second.
+        const existing = existingEpisodeId(err);
+        if (existing) {
+          clearAttempt(attempts.current, scope);
+          return existing;
+        }
+        throw err;
+      }
     },
-    onMutate: (person) => setRowError((prev) => ({ ...prev, [person.id]: "" })),
-    onSuccess: (episode) => onEpisodeCreated(episode.id),
-    onError: (err, person) =>
+    onMutate: ({ person }) => setRowError((prev) => ({ ...prev, [person.id]: "" })),
+    onSuccess: (episodeId, { person }) => {
+      void queryClient.invalidateQueries({ queryKey: ["episodes", person.id] });
+      onEpisodeCreated(episodeId);
+    },
+    onError: (err, { person }) =>
       setRowError((prev) => ({ ...prev, [person.id]: message(err, t("find.openFailed")) })),
   });
 
@@ -61,7 +85,9 @@ export function FindMother({ onEpisodeCreated }: { onEpisodeCreated: (episodeId:
   });
 
   const busyId =
-    (openEpisode.isPending && openEpisode.variables?.id) || (verify.isPending && verify.variables?.id) || null;
+    (openEpisode.isPending && openEpisode.variables?.person.id) ||
+    (verify.isPending && verify.variables?.id) ||
+    null;
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -121,15 +147,25 @@ export function FindMother({ onEpisodeCreated }: { onEpisodeCreated: (episodeId:
             {results.length > 1 && <p className="text-sm text-muted">{t("find.matchHint")}</p>}
           </div>
           <ul className="space-y-3">
-            {results.map((person) => (
+            {results.map((person, index) => {
+              const episodesQuery = episodeQueries[index];
+              const action = episodesQuery?.data ? episodeAction(episodesQuery.data) : null;
+              const opening = openEpisode.isPending && openEpisode.variables?.person.id === person.id;
+              return (
               <li key={person.id}>
                 <Card className="space-y-4 transition-shadow hover:shadow-raised">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <Avatar name={person.full_name} />
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="text-lg font-semibold">{person.full_name}</p>
                       <p className="text-base text-muted">{formatAge(person, t)}</p>
                     </div>
+                    {action?.kind === "continue" && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-brand">
+                        <HeartPulse aria-hidden className="size-4" />
+                        {t("find.activeEpisode")}
+                      </span>
+                    )}
                   </div>
                   <dl className="grid gap-2 text-base sm:grid-cols-2">
                     <div className="flex items-center gap-2">
@@ -160,10 +196,22 @@ export function FindMother({ onEpisodeCreated }: { onEpisodeCreated: (episodeId:
                   </dl>
                   {rowError[person.id] && <Alert kind="problem">{rowError[person.id]}</Alert>}
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    <Button disabled={busyId === person.id} onClick={() => openEpisode.mutate(person)}>
-                      {openEpisode.isPending && openEpisode.variables?.id === person.id
+                    <Button
+                      disabled={busyId === person.id || episodesQuery?.isPending}
+                      onClick={() => openEpisode.mutate({ person, action })}
+                    >
+                      {action?.kind === "continue" ? (
+                        <ArrowRight aria-hidden className="size-4" />
+                      ) : (
+                        <Plus aria-hidden className="size-4" />
+                      )}
+                      {opening
                         ? t("find.selecting")
-                        : t("find.select")}
+                        : episodesQuery?.isPending
+                          ? t("find.checkingEpisodes")
+                          : action?.kind === "continue"
+                            ? t("find.continueEpisode")
+                            : t("find.startEpisode")}
                     </Button>
                     {!person.contact_verified_at && (
                       <Button
@@ -177,7 +225,8 @@ export function FindMother({ onEpisodeCreated }: { onEpisodeCreated: (episodeId:
                   </div>
                 </Card>
               </li>
-            ))}
+              );
+            })}
           </ul>
         </section>
       )}

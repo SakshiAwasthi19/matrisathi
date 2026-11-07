@@ -65,15 +65,16 @@ is the reviewer's call.
   merges every PR. Branch protection on `main` is not yet set (W1-A1).
 - D04 (auth/session/runtime versions): proposal built and tested, awaiting
   tech-lead approval. The written proposal is W1-A3.
-- **D13 episode model** (manager, Proposed): "Select & create episode"
-  always opens a *new* episode. W1-A5 will add listing a mother's episodes
-  and continuing an existing ACTIVE one; enforcing one ACTIVE episode per
-  mother (409 + partial unique index) waits for D13.
+- **D13 episode model**: decided 2026-11-07, option A (one ACTIVE episode per
+  mother), by the developer; manager informed. Built in W1-A5: staff continue a
+  mother's active episode; a second one returns 409; a partial unique index
+  enforces it. No episode can be closed yet (Phase 3), so a second pregnancy
+  for the same mother cannot be recorded until then.
 - **D14 UI dependencies**: the build plan's UI library list was approved by
   the developer on 2026-11-07; the manager is informed at the 14 Nov
   review. Not installed yet (W1-B7).
 - **D15 review rule for one developer** (manager, Proposed).
-- D13–D15 proposal documents are not written yet (W1-B8).
+- D15 (review rule) and D03 (merge approver): proposals in `docs/decisions/`; interim rule in force.
 - D02 pilot language: Open. i18n will start with English plus an empty
   second locale; no language assumed.
 - Contact **value** editing (changing a phone number): needs a decision on

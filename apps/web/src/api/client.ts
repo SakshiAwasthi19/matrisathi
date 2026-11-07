@@ -12,10 +12,26 @@ const CSRF_HEADER_VALUE = "web";
 
 export class ApiError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  /** The server's `detail`, kept as-is: a string, or an object for structured errors. */
+  detail: unknown;
+  constructor(status: number, message: string, detail?: unknown) {
     super(message);
     this.status = status;
+    this.detail = detail;
   }
+}
+
+/** The episode a 409 "already has an active episode" points at, if any. */
+export function existingEpisodeId(err: unknown): string | null {
+  if (!(err instanceof ApiError) || err.status !== 409) return null;
+  const detail = err.detail as { existing_episode_id?: unknown } | null;
+  return typeof detail?.existing_episode_id === "string" ? detail.existing_episode_id : null;
+}
+
+function detailMessage(detail: unknown, status: number): string {
+  if (typeof detail === "string") return detail;
+  const message = (detail as { message?: unknown } | null)?.message;
+  return typeof message === "string" ? message : `Request failed (${status})`;
 }
 
 // A keyed create is safe to resend: the server returns the original record
@@ -124,7 +140,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new ApiError(res.status, body.detail ?? `Request failed (${res.status})`);
+    throw new ApiError(res.status, detailMessage(body.detail, res.status), body.detail);
   }
   return body as T;
 }
@@ -207,4 +223,5 @@ export const api = {
       idempotencyKey,
     }),
   getPregnancyEpisode: (id: string) => request<PregnancyEpisode>(`/pregnancy-episodes/${id}`),
+  listEpisodes: (personId: string) => request<PregnancyEpisode[]>(`/people/${personId}/episodes`),
 };
