@@ -1,6 +1,9 @@
 # MatriSathi — project status
 
-Last updated: 2026-10-31. Full SG1 detail and closure table:
+Last updated: 2026-11-07. Delivery tracking now lives in
+`docs/delivery/progress.md` (one row per task) and `docs/delivery/phases.md`
+(phase dashboard). Week 1 (SG0 + SG1) restarted Mon 9 Nov 2026; every
+tracker date shifts +1 week. Full SG1 detail and closure table:
 `docs/delivery/evidence/SG1/report.md` (written 2026-09-30 — its remote/CI
 sections predate the remote being added; see "CI" below).
 
@@ -57,19 +60,28 @@ is the reviewer's call.
 ## Open decisions
 
 - SG0 decisions D01–D03 (team roles, hours, pilot site/language,
-  repo/merge policy): still Open. Commits are currently going straight to
-  `main`; the proposed branch + PR review flow (D03) isn't in force yet.
+  repo/merge policy): still Open. From 2026-11-07 work goes on task
+  branches; until D03 and D15 are decided, the developer approves and
+  merges every PR. Branch protection on `main` is not yet set (W1-A1).
 - D04 (auth/session/runtime versions): proposal built and tested, awaiting
-  tech-lead approval.
-- **Episode model** (new): "Select & create episode" on an existing mother
-  always opens a *new* episode, and there is no way to reopen her existing
-  one. Needs a product decision (one active episode per mother? a "view her
-  episodes" path?) before building.
+  tech-lead approval. The written proposal is W1-A3.
+- **D13 episode model** (manager, Proposed): "Select & create episode"
+  always opens a *new* episode. W1-A5 will add listing a mother's episodes
+  and continuing an existing ACTIVE one; enforcing one ACTIVE episode per
+  mother (409 + partial unique index) waits for D13.
+- **D14 UI dependencies**: the build plan's UI library list was approved by
+  the developer on 2026-11-07; the manager is informed at the 14 Nov
+  review. Not installed yet (W1-B7).
+- **D15 review rule for one developer** (manager, Proposed).
+- D13–D15 proposal documents are not written yet (W1-B8).
+- D02 pilot language: Open. i18n will start with English plus an empty
+  second locale; no language assumed.
 - Contact **value** editing (changing a phone number): needs a decision on
   the identity-transfer risk first.
 - WhatsApp/BSP vendor: not chosen.
 - D09 hosting/compliance for real patient data: open. Staging is
-  synthetic-data-only.
+  synthetic-data-only and will use its own Supabase project, never the
+  shared team database (W1-A4).
 
 ## Known limitations
 
@@ -94,7 +106,8 @@ is the reviewer's call.
 
 ## Next proposed task
 
-Decide the episode model, then build the "reopen an existing episode" path
-on the find screen. Separately: harden the staging setup before any
-deployment. SG2 work (caregiver delegation) still waits on SG1's human
-reviews (M003, M008) and the SG0 decisions.
+Week 1 (9–13 Nov) tasks are listed in `docs/delivery/progress.md`. Next:
+write the Phase 0 plan (`docs/delivery/phases/P0-plan.md`), then work the
+Week 1 tasks in its order. W1-A5 (episode list and continue) runs late in
+the week. SG2 work still waits on the Phase 0 gate, SG1's human reviews
+(M003, M008) and the SG0 decisions.
