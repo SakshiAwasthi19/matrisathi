@@ -143,6 +143,8 @@ def _task(db, w, **kw):
 
 def test_assigned_task_must_have_an_owner(db_session, world):
     _task(db_session, world, status=TaskStatus.NEW)
+    # Unowned work may be cancelled (e.g. its plan was replaced).
+    _task(db_session, world, status=TaskStatus.CANCELLED, outcome=TaskOutcome.NOT_NEEDED, closed_at=NOW)
     with pytest.raises(IntegrityError, match="ck_task_owned_once_assigned"):
         _task(db_session, world, status=TaskStatus.ASSIGNED)
     db_session.rollback()

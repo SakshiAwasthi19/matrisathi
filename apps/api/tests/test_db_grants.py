@@ -28,6 +28,7 @@ EXPECTED: dict[str, set[str]] = {
     "audit_event": APPEND_ONLY,  # history cannot be changed
     "caregiver_grant": NO_DELETE,  # revoked, never deleted
     "contact_method": RW,
+    "episode_dating": NO_DELETE,  # superseded, never deleted
     "facility": RW,
     "idempotency_key": RW,
     "login_attempt": RW,

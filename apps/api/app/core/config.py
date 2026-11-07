@@ -61,6 +61,11 @@ class Settings(BaseSettings):
     file_store_local_root: str = ".data/files"
     supabase_storage_bucket: str = "matrisathi-files"
 
+    # "Today" for scheduling and "future vs past" decisions. India has no
+    # daylight saving, so a fixed offset (UTC+05:30) is exact and needs no
+    # timezone-database package.
+    local_utc_offset_minutes: int = 330
+
     # D07 (patient/caregiver access) is not decided. Until it is, every
     # patient/caregiver access check answers "no", whatever grants exist.
     patient_access_enabled: bool = False

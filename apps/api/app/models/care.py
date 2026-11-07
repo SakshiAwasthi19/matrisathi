@@ -140,6 +140,10 @@ class CarePlan(Base, TimestampMixin):
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     version: Mapped[int] = _version()
 
+    # The ORM adds "WHERE version = <read value>" to every UPDATE and raises
+    # StaleDataError if someone changed the row in between.
+    __mapper_args__ = {"version_id_col": version}
+
 
 # --- Appointments --------------------------------------------------------------
 
@@ -155,6 +159,16 @@ class AppointmentStatus(str, enum.Enum):
 
 class Appointment(Base, TimestampMixin):
     __tablename__ = "appointment"
+    __table_args__ = (
+        # An appointment can be rescheduled once, so only the newest in a
+        # chain is ever current (F007: "only the current reminder is eligible").
+        Index(
+            "uq_appointment_one_successor",
+            "previous_appointment_id",
+            unique=True,
+            postgresql_where=text("previous_appointment_id IS NOT NULL"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = uuid_pk()
     episode_id: Mapped[uuid.UUID] = _fk("pregnancy_episode.id")
@@ -172,6 +186,10 @@ class Appointment(Base, TimestampMixin):
     previous_appointment_id: Mapped[uuid.UUID | None] = _fk("appointment.id", nullable=True)
     status_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
     version: Mapped[int] = _version()
+
+    # The ORM adds "WHERE version = <read value>" to every UPDATE and raises
+    # StaleDataError if someone changed the row in between.
+    __mapper_args__ = {"version_id_col": version}
 
 
 # --- Owned tasks ---------------------------------------------------------------
@@ -211,7 +229,19 @@ class CareTask(Base, TimestampMixin):
             "(status IN ('COMPLETED', 'CANCELLED')) = (outcome IS NOT NULL AND closed_at IS NOT NULL)",
             name="ck_task_closure_recorded",
         ),
-        CheckConstraint("status = 'NEW' OR owner_staff_user_id IS NOT NULL", name="ck_task_owned_once_assigned"),
+        # Assigned, awaiting and completed work always has an owner. A task
+        # nobody picked up may still be cancelled (e.g. its plan was replaced).
+        CheckConstraint(
+            "status IN ('NEW', 'CANCELLED') OR owner_staff_user_id IS NOT NULL", name="ck_task_owned_once_assigned"
+        ),
+        # A missed visit creates exactly one follow-up task, even if the
+        # "missed" request is repeated or two staff press it at once.
+        Index(
+            "uq_care_task_one_follow_up_per_missed_visit",
+            "source_appointment_id",
+            unique=True,
+            postgresql_where=text("kind = 'FOLLOW_UP_MISSED_VISIT'"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = uuid_pk()
@@ -219,6 +249,8 @@ class CareTask(Base, TimestampMixin):
     facility_id: Mapped[uuid.UUID] = _fk("facility.id")
     kind: Mapped[TaskKind] = mapped_column(Enum(TaskKind, name="task_kind"), nullable=False)
     status: Mapped[TaskStatus] = mapped_column(Enum(TaskStatus, name="task_status"), nullable=False)
+    care_plan_id: Mapped[uuid.UUID | None] = _fk("care_plan.id", nullable=True)
+    template_item_id: Mapped[uuid.UUID | None] = _fk("care_plan_template_item.id", nullable=True)
     owner_staff_user_id: Mapped[uuid.UUID | None] = _fk("staff_user.id", nullable=True)
     backup_staff_user_id: Mapped[uuid.UUID | None] = _fk("staff_user.id", nullable=True)
     due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -229,6 +261,10 @@ class CareTask(Base, TimestampMixin):
     closure_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     version: Mapped[int] = _version()
+
+    # The ORM adds "WHERE version = <read value>" to every UPDATE and raises
+    # StaleDataError if someone changed the row in between.
+    __mapper_args__ = {"version_id_col": version}
 
 
 # --- Investigations ------------------------------------------------------------
@@ -266,3 +302,7 @@ class Investigation(Base, TimestampMixin):
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     reviewed_by_staff_user_id: Mapped[uuid.UUID | None] = _fk("staff_user.id", nullable=True)
     version: Mapped[int] = _version()
+
+    # The ORM adds "WHERE version = <read value>" to every UPDATE and raises
+    # StaleDataError if someone changed the row in between.
+    __mapper_args__ = {"version_id_col": version}
