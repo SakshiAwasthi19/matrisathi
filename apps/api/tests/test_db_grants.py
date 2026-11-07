@@ -25,6 +25,10 @@ EXPECTED: dict[str, set[str]] = {
     "care_task": NO_DELETE,
     "file_object": INSERT_ONLY,  # a stored file record never changes
     "investigation": NO_DELETE,
+    "local_contact": NO_DELETE,
+    "observation": NO_DELETE,  # corrections supersede; the earlier value is kept
+    "prescription": NO_DELETE,
+    "referral": NO_DELETE,
     "audit_event": APPEND_ONLY,  # history cannot be changed
     "caregiver_grant": NO_DELETE,  # revoked, never deleted
     "contact_method": RW,

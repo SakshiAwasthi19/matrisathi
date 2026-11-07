@@ -9,6 +9,7 @@ from collections.abc import Iterable, Mapping
 from enum import Enum
 
 from app.models.care import AppointmentStatus, CarePlanStatus, InvestigationStatus, TaskStatus
+from app.models.records import ReferralStatus
 
 # One place to change who counts as a clinician (Phase 1 plan section 5;
 # confirm with the tech lead (D04) and the doctor (M008 question 10)).
@@ -50,6 +51,18 @@ CARE_PLAN_TRANSITIONS: Mapping[Enum, frozenset[Enum]] = {
     P.ACTIVE: frozenset({P.SUPERSEDED, P.CANCELLED}),
     P.SUPERSEDED: frozenset(),
     P.CANCELLED: frozenset(),
+}
+
+R = ReferralStatus
+REFERRAL_TRANSITIONS: Mapping[Enum, frozenset[Enum]] = {
+    # Each step records something that happened; CLOSED always needs a reason.
+    # Nothing (e.g. a message being sent) closes a referral by itself.
+    R.SENT: frozenset({R.CONTACTED, R.ATTENDED, R.CLOSED}),
+    R.CONTACTED: frozenset({R.ATTENDED, R.CLOSED}),
+    R.ATTENDED: frozenset({R.ADVICE_RECEIVED, R.CLOSED}),
+    R.ADVICE_RECEIVED: frozenset({R.FOLLOW_UP_COMPLETED, R.CLOSED}),
+    R.FOLLOW_UP_COMPLETED: frozenset(),
+    R.CLOSED: frozenset(),
 }
 
 # (from, to) moves that only a clinician may make.

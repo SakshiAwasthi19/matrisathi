@@ -255,6 +255,10 @@ class CareTask(Base, TimestampMixin):
     backup_staff_user_id: Mapped[uuid.UUID | None] = _fk("staff_user.id", nullable=True)
     due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     source_appointment_id: Mapped[uuid.UUID | None] = _fk("appointment.id", nullable=True)
+    # The record that created this work, for kinds other than missed visits
+    # (e.g. "PRESCRIPTION" for an unclear instruction, "REFERRAL" for advice).
+    source_record_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    source_record_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     barrier: Mapped[str | None] = mapped_column(String(64), nullable=True)
     outcome: Mapped[TaskOutcome | None] = mapped_column(Enum(TaskOutcome, name="task_outcome"), nullable=True)
