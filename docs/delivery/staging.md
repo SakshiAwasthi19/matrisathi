@@ -86,12 +86,21 @@ If the deploy log shows `Refusing to start with ENV='staging': …`, it names th
 
 ## 5. Deploy the web app (Vercel)
 
-Completed in W1-B2 (adds `VITE_ENV_LABEL` and the STAGING banner). Until then:
-1. Import `matrisathi/jananisaathi`, root directory `apps/web`.
-2. Environment variable `VITE_API_BASE` = `<Render URL>/api/v1`. Vite reads it at **build** time; redeploy after changing it.
-3. Back on Render, set `CORS_ALLOWED_ORIGINS` to the exact Vercel URL (`https://…vercel.app`, no trailing slash) and redeploy.
+1. Add New → Project → import `matrisathi/jananisaathi`. Root directory: `apps/web`. Framework preset: Vite (detected). Build command `npm run build`, output directory `dist` (the defaults).
+2. Node version: Project Settings → Build and Deployment → Node.js Version. Pick the highest Vercel offers that is not above the pinned `26.8.1` (`apps/web/.nvmrc`), and note which one in `progress.md` if it differs.
+3. Environment variables (names only; set for **Production** of this staging project, since Vercel calls every main-branch deploy "Production"):
 
-## 6. Verify (record results in `progress.md`, W1-A4 row)
+   | Name | Value |
+   |---|---|
+   | `VITE_API_BASE` | `<Render URL>/api/v1` |
+   | `VITE_ENV_LABEL` | `staging` (shows the STAGING banner on every page; only `production` hides it) |
+
+   Vite reads both at **build** time. Redeploy after changing either.
+4. Deploy. `apps/web/vercel.json` already sends every path to `index.html`, so links such as `/episodes/<id>` open directly, and adds basic security headers.
+5. Back on Render, set `CORS_ALLOWED_ORIGINS` to the exact Vercel URL (`https://<project>.vercel.app`, no trailing slash) and redeploy the API. Cookies work across the two domains because the API sends them `Secure` + `SameSite=None` (section 4).
+6. Do not add a custom domain or share the URL outside the review group until section 6 passes.
+
+## 6. Verify (record results in `progress.md`, W1-A4 and W1-B2 rows)
 
 1. **Environment label.** Open `<Render URL>/health`. Expect `{"status":"ok","env":"staging"}`.
 2. **Committed dev password fails.**
@@ -106,7 +115,8 @@ Completed in W1-B2 (adds `VITE_ENV_LABEL` and the STAGING banner). Until then:
    SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tableowner = 'matrisathi_app';
    ```
    Expect `false`, `false`, and no rows. If either is `true` or any row appears, **stop, do not share staging**, and report it: fixing it is a database-role change that needs approval.
-4. **Synthetic data only.** Every record entered on staging is invented. No real names or phone numbers, including in screenshots.
+4. **Web app.** Open the Vercel URL: the purple **STAGING** banner shows on the sign-in page. Sign in with your `SEED_PASSWORD`, register an invented mother, then reload `/episodes/<id>` directly: the record loads (deep link works) and the banner is still there.
+5. **Synthetic data only.** Every record entered on staging is invented. No real names or phone numbers, including in screenshots.
 
 ## What is enforced in code
 
