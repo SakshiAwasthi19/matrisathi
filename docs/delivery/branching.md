@@ -9,7 +9,7 @@ How work reaches `main`. Applies to every task from Week 1 on.
 - **PR title starts with the task ID**, for example `W2-A3: dating, ANC plan and appointments API`.
 - **Use the PR template** (`.github/pull_request_template.md`). Fill in every check with real results; write "not run" for anything skipped.
 - **Update `docs/delivery/progress.md` in the same PR.**
-- **Squash-merge only**, so each task is one commit on `main` with one merge SHA.
+- **Merge method:** a single, independent PR is squash-merged. A **stack** of PRs (each based on the previous task's branch) is merged with **merge commits**, in order: squashing a stack would make every later PR show the earlier tasks' changes again. Either way each task has one merge SHA on `main`, recorded in `progress.md`. (Decided 2026-11-07; PRs #1–#27 were merged this way.)
 - **Every commit and every push needs the developer's explicit approval** (`CLAUDE.md`).
 - **Never force-push `main`**, and never rewrite history that is already pushed.
 

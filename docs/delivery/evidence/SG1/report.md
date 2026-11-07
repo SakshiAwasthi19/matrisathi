@@ -25,8 +25,8 @@ Nothing below is "Accepted". Nothing at the candidate commit is "CI pass" yet (s
 |---|---|
 | **Candidate SHA** | `48f6e0e2f9826f9f040538ab08fb9588abd81314` (`48f6e0e`) |
 | Branch | `w1/w1-b2-vercel-staging`: the tip of the Week 1 branch stack, built on `main` at `39059e9` |
-| Pushed? | **No.** The developer's GitHub account cannot push yet (403); access expected 2026-11-08. All Week 1 work is committed locally on stacked `w1/*` branches. |
-| CI at this SHA | **Pending** until the branches are pushed and PRs opened. |
+| Pushed? | Yes, 2026-11-07. Merged to `main` through PRs #1–#14 (merge commits, each with a green CI run). |
+| CI | **Green on `main` at `1895994`** (all Week 1 and Week 2 work), [run 42380238581](https://github.com/matrisathi/jananisaathi/actions/runs/42380238581): backend (migrations, ruff, mypy, pytest) and frontend (typecheck, vitest, build). Each PR also had its own green run (`progress.md`). |
 | Local runtime | Python 3.12.13 (pinned 3.12.14), Node 24.12.0 (pinned 26.8.1), PostgreSQL 16.4. The local uv (0.11.32) cannot install 3.12.14; CI uses the pinned versions. |
 | Raw output | [`local-run-48f6e0e.txt`](local-run-48f6e0e.txt) |
 
@@ -47,14 +47,14 @@ Phase 0 exit criterion (decided 2026-11-07): **AT01–AT04 pass in CI on one SHA
 
 | Check | Local (`48f6e0e`, 2026-11-07) | CI | Staging | Notes |
 |---|---|---|---|---|
-| AT01 Staff login and sessions | **Pass** (14 tests) | Pending push | n/a | |
-| AT02 Organization and facility isolation | **Pass** (12 tests) | Pending push | n/a | |
-| AT03 Shared phone and reference injection | **Pass** (19 tests) | Pending push | n/a | |
-| AT04 Audit integrity | **Pass** (9 tests) | Pending push | n/a | New finding F8 (section 5) |
-| AT05 Repeatable foundation | **Pass** (fresh clone, section 3.5) | Pending push | **Not run**: staging not deployed | Gate needs the staging run |
-| P01 Shared phone (pilot check) | **Pass** (4 tests) | Pending push | Not run | |
-| P03 Wrong facility denied (pilot check) | **Pass** (5 tests) | Pending push | Not run | |
-| Full suites | pytest **88 passed**, ruff clean, mypy clean (33 files); web typecheck clean, vitest **32 passed**, build OK (main JS 115.13 kB gzipped) | Pending push | | |
+| AT01 Staff login and sessions | **Pass** (14 tests) | **Pass** at `1895994` | n/a | |
+| AT02 Organization and facility isolation | **Pass** (12 tests) | **Pass** at `1895994` | n/a | |
+| AT03 Shared phone and reference injection | **Pass** (19 tests) | **Pass** at `1895994` | n/a | |
+| AT04 Audit integrity | **Pass** (9 tests) | **Pass** at `1895994` | n/a | New finding F8 (section 5) |
+| AT05 Repeatable foundation | **Pass** (fresh clone, section 3.5) | **Pass** at `1895994` | **Not run**: staging not deployed | Gate needs the staging run |
+| P01 Shared phone (pilot check) | **Pass** (4 tests) | **Pass** at `1895994` | Not run | |
+| P03 Wrong facility denied (pilot check) | **Pass** (5 tests) | **Pass** at `1895994` | Not run | |
+| Full suites | pytest **88 passed**, ruff clean, mypy clean (33 files); web typecheck clean, vitest **32 passed**, build OK (main JS 115.13 kB gzipped) | **Pass** at `1895994` | | |
 
 The pilot checks P01 and P03 have no standalone wording in either workbook (they appear only as references in G06, G10 and G14). They are taken here as the phase plan states them: "P01 (shared phone)" and "P03 (wrong facility denied)".
 

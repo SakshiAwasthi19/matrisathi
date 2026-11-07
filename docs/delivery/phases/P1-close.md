@@ -1,7 +1,7 @@
 # Phase 1 close: Pregnancy care (SG2)
 
 **Written:** 2026-11-07 at SHA `7df67ff` (`w2/w2-b4-sg2-scenarios-and-scripts`), for the Saturday review.
-**Status proposed:** **Ready for review: not passed.** Every Phase 1 task is built, tested locally and pushed. Nothing is CI-verified, nothing has been run on staging, and two decisions block parts of the gate. Only the manager can accept tasks or the gate.
+**Status proposed:** **Ready for review: not passed.** Every Phase 1 task is built, merged to `main` (PRs #15–#26) and **green in CI at `1895994`** ([run 42380238581](https://github.com/matrisathi/jananisaathi/actions/runs/42380238581)). Nothing has been run on staging, and two decisions block parts of the gate. Only the manager can accept tasks or the gate.
 
 **Context:** Phase 1 was started early, before the Phase 0 gate (developer's decision, 7 Nov; see `P1-plan.md` section 1). The Phase 0 gate is still open for the same reasons listed below (no CI, no staging, reviews pending).
 
@@ -13,17 +13,17 @@
 
 | Exit criterion (`PHASE_PLAN.md`) | Local | CI | Staging | State |
 |---|---|---|---|---|
-| AT06 late/unknown dating and schedules | Pass: `test_sg2_acceptance.py::test_AT06_…` + `test_care_api.py` | not run | not run | **Not passed** (needs CI + staging script) |
-| AT07 appointments and overdue work | Pass: `test_AT07_…` + `test_care_api.py` | not run | not run | **Not passed** |
-| AT08 reports and medicine records | Pass: `test_AT08_…` + `test_records_api.py`, `test_files_api.py` | not run | not run | **Not passed** |
-| AT09 referral closure | Pass: `test_AT09_…` + `test_records_api.py` | not run | not run | **Not passed** |
-| AT10 birth plan and urgent help | Pass: `test_AT10_…` + `test_next_step_api.py`, `test_public_urgent_help.py` | not run | not run | **Not passed** |
+| AT06 late/unknown dating and schedules | Pass: `test_sg2_acceptance.py::test_AT06_…` + `test_care_api.py` | **Pass** at `1895994` | not run | **Not passed** (needs the staging script run) |
+| AT07 appointments and overdue work | Pass: `test_AT07_…` + `test_care_api.py` | **Pass** at `1895994` | not run | **Not passed** |
+| AT08 reports and medicine records | Pass: `test_AT08_…` + `test_records_api.py`, `test_files_api.py` | **Pass** at `1895994` | not run | **Not passed** |
+| AT09 referral closure | Pass: `test_AT09_…` + `test_records_api.py` | **Pass** at `1895994` | not run | **Not passed** |
+| AT10 birth plan and urgent help | Pass: `test_AT10_…` + `test_next_step_api.py`, `test_public_urgent_help.py` | **Pass** at `1895994` | not run | **Not passed** |
 | AT28 patient/caregiver access | Model level only: `test_AT28_…`, `test_caregiver_access.py` | not run | — | **Blocked: D07** |
-| P02, P05, P08, P09, P10 | Covered by the tests above (mapping in `test-scripts/SG2.md`) | not run | not run | **Not passed** |
+| P02, P05, P08, P09, P10 | Covered by the tests above (mapping in `test-scripts/SG2.md`) | **Pass** at `1895994` | not run | **Not passed** |
 | P04 caregiver revocation | Model level only | — | — | **Blocked: D07** |
-| An uploaded report is never shown as reviewed | `test_uploaded_outside_report_is_received_not_reviewed`, `test_AT08_…`; DB constraint `ck_investigation_review_attributed` | not run | not run | Evidenced locally |
-| A date correction moves only future items | `test_correction_keeps_history_and_past_intact`, `test_AT06_…` | not run | not run | Evidenced locally (week-timed items are cancelled and re-booking is a review task, because no week rule is approved: D05) |
-| Urgent help works signed out with location denied | `test_signed_out_user_gets_verified_service_numbers_only`, `test_AT10_…`; page never requests location | not run | not run | API evidenced; **browser check (signed out, location blocked, Slow 3G) not run** |
+| An uploaded report is never shown as reviewed | `test_uploaded_outside_report_is_received_not_reviewed`, `test_AT08_…`; DB constraint `ck_investigation_review_attributed` | **Pass** at `1895994` | not run | Evidenced locally |
+| A date correction moves only future items | `test_correction_keeps_history_and_past_intact`, `test_AT06_…` | **Pass** at `1895994` | not run | Evidenced locally (week-timed items are cancelled and re-booking is a review task, because no week rule is approved: D05) |
+| Urgent help works signed out with location denied | `test_signed_out_user_gets_verified_service_numbers_only`, `test_AT10_…`; page never requests location | **Pass** at `1895994` | not run | API evidenced; **browser check (signed out, location blocked, Slow 3G) not run** |
 
 **Suite totals at `7df67ff`:** pytest **342 passed**, ruff clean, mypy clean (53 files); vitest **46 passed**, typecheck clean, build OK (main JS 136.84 kB gzipped, limit 250 kB).
 
@@ -63,7 +63,7 @@ No open defect is known in the Phase 1 code. The browser checks below may find s
 
 ## 4. What is still needed to pass the gate
 
-1. **Open the pull requests (25, in stack order) so CI runs**, then merge in order. Record each merge SHA and CI run in `progress.md`. (`gh auth login` lets Claude open them.)
+1. ~~Open the pull requests so CI runs~~ **Done 2026-11-07:** PRs #1–#27 merged in order, each green; CI green on `main` at `1895994`; SHAs and runs in `progress.md`.
 2. **Deploy staging** (`docs/delivery/staging.md`, now including the private storage bucket and the placeholder-template seed) and run `docs/delivery/test-scripts/SG2.md` there, filling the Actual column.
 3. **Browser checks:** every Phase 1 screen at 360 px and 1280 px; Urgent help signed out, location blocked, Slow 3G.
 4. **D07** (manager + tech lead): unblocks patient sign-in, caregiver screens, AT28 and P04.
