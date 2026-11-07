@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     def cors_allowed_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
 
+    # D07 (patient/caregiver access) is not decided. Until it is, every
+    # patient/caregiver access check answers "no", whatever grants exist.
+    patient_access_enabled: bool = False
+
     login_throttle_max_attempts: int = 5
     login_throttle_window_minutes: int = 15
 
