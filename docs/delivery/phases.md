@@ -3,7 +3,7 @@
 | Phase | Gate | Status | Dev A tasks accepted | Dev B tasks accepted | ATs pass / required | Pilot checks pass / required | Open decisions | Blockers |
 |---|---|---|---|---|---|---|---|---|
 | 0 Foundation | SG0+SG1 | In progress | 0/6 | 0/8 | 0/5 | 0/2 | D01 D02 D03 D04 D13 D14 D15 | None for code. Merges: developer approves until D03/D15. |
-| 1 Pregnancy care | SG2 | Not started | 0/5 | 0/5 | 0/6 | 0/6 | D05 D07 | Phase 0 gate |
+| 1 Pregnancy care | SG2 | In progress (early start, 7 Nov) | 0/5 | 0/5 | 0/6 | 0/6 | D04 D05 D07 | Phase 0 gate not yet accepted (developer chose to start early; see P1-plan.md) |
 | 2 Messaging | SG3 | Not started | 0/4 | 0/4 | 0/4 | 0/2 | D06 D08 | Phase 1 gate; WhatsApp verification lead time |
 | 3 Birth & postpartum | SG4 | Not started | 0/4 | 0/4 | 0/5 | 0/3 | — | Phase 2 gate |
 | 4 Child & field | SG5 interim | Not started | 0/4 | 0/4 | 0/3 | 0/4 | — | Phase 3 gate |
@@ -12,7 +12,7 @@
 
 ATs and pilot checks count only when actually run at a recorded SHA. AT01–AT04 already pass locally and in CI on `main`, but not yet at a recorded candidate SHA for this gate, so they are not counted.
 
-## Current phase: 0, Week 1 restarted 9 Nov; reporting files created (W1-B4), all other tasks not started
+## Current phase: 0 (all tasks built; awaiting push, CI, staging and review) with Phase 1 started early
 ## What was shown at the last Saturday review
 Nothing yet. The first review is Sat 14 Nov.
 ## Next phase entry criteria: not met (Phase 0 gate not accepted; D04 not decided; D07 not proposed; D05 not drafted)
