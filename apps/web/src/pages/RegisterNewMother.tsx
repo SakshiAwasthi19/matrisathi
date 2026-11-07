@@ -1,9 +1,18 @@
+import { useMutation } from "@tanstack/react-query";
+import { CalendarDays, NotebookPen, UserRound } from "lucide-react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api, ApiError, type AgePrecision, type Person, type PersonCreateInput } from "../api/client";
+import { PageState } from "../components/PageState";
+import { Button } from "../components/ui/button";
+import { Card, Section } from "../components/ui/card";
+import { Field, Hint, Input, Select, Textarea } from "../components/ui/field";
+import { Alert } from "../components/ui/status";
 import { attemptKey, clearAttempt, createAttemptStore } from "../lib/attempts";
 import { useSession } from "../state/session";
 
 export function RegisterNewMother({ onEpisodeCreated }: { onEpisodeCreated: (episodeId: string) => void }) {
+  const { t } = useTranslation();
   const { staff } = useSession();
   const memberships = staff?.memberships ?? [];
   const [facilityId, setFacilityId] = useState(memberships[0]?.facility_id ?? "");
@@ -15,19 +24,14 @@ export function RegisterNewMother({ onEpisodeCreated }: { onEpisodeCreated: (epi
   const [reportedAgeYears, setReportedAgeYears] = useState("");
   const [medicalHistory, setMedicalHistory] = useState("");
   const [allergies, setAllergies] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const attempts = useRef(createAttemptStore());
   // Set once the person exists but opening her episode hasn't succeeded yet.
   // A resubmit then retries only the episode, so a failure between the two
   // calls can never register the same mother twice.
   const [registeredPerson, setRegisteredPerson] = useState<Person | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
-    try {
+  const register = useMutation({
+    mutationFn: async () => {
       let person = registeredPerson;
       if (!person) {
         const input: PersonCreateInput = {
@@ -51,166 +55,153 @@ export function RegisterNewMother({ onEpisodeCreated }: { onEpisodeCreated: (epi
       clearAttempt(attempts.current, "person");
       clearAttempt(attempts.current, "episode");
       setRegisteredPerson(null);
-      onEpisodeCreated(episode.id);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not register mother");
-    } finally {
-      setSubmitting(false);
-    }
+      return episode;
+    },
+    onSuccess: (episode) => onEpisodeCreated(episode.id),
+  });
+
+  if (memberships.length === 0) {
+    return <PageState kind="no-access" body={t("register.noFacilities")} />;
   }
 
+  const ageOption = (value: AgePrecision, label: string, input?: React.ReactNode) => (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <label className="inline-flex min-h-12 cursor-pointer items-center gap-3 md:min-h-10">
+        <input
+          type="radio"
+          name="age_precision"
+          id={`age_precision_${value.toLowerCase()}`}
+          checked={agePrecision === value}
+          onChange={() => setAgePrecision(value)}
+          className="size-5 accent-brand"
+        />
+        <span>{label}</span>
+      </label>
+      {input}
+    </div>
+  );
+
+  const errorText = register.error
+    ? register.error instanceof ApiError
+      ? register.error.message
+      : t("register.failed")
+    : null;
+
   return (
-    <div style={{ maxWidth: 520, fontFamily: "sans-serif" }}>
-      <h2>Register a mother &amp; open a pregnancy episode</h2>
-      <p style={{ color: "#555" }}>Synthetic data only — this is a demonstration flow.</p>
-      <form onSubmit={handleSubmit}>
-        <fieldset disabled={registeredPerson !== null} style={{ border: 0, padding: 0, margin: 0 }}>
-          <div style={{ marginBottom: 12 }}>
-            <label htmlFor="facility">Facility</label>
-            <br />
-            <select id="facility" value={facilityId} onChange={(e) => setFacilityId(e.target.value)} required>
+    <Card>
+      <h2 className="text-lg font-semibold">{t("register.title")}</h2>
+      <form
+        className="mt-4 space-y-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          register.mutate();
+        }}
+      >
+        <fieldset disabled={registeredPerson !== null} className="space-y-8">
+          <Section icon={UserRound} title={t("register.sectionWho")}>
+          <Field label={t("register.facility")} htmlFor="facility">
+            <Select id="facility" value={facilityId} onChange={(e) => setFacilityId(e.target.value)} required>
               <option value="" disabled>
-                Select a facility
+                {t("register.selectFacility")}
               </option>
               {memberships.map((m) => (
                 <option key={m.facility_id} value={m.facility_id}>
-                  {m.facility_name} ({m.role})
+                  {t("register.facilityOption", { facility: m.facility_name, role: m.role })}
                 </option>
               ))}
-            </select>
+            </Select>
+          </Field>
+          <div className="grid gap-5 md:grid-cols-2">
+            <Field label={t("register.fullName")} htmlFor="full_name">
+              <Input id="full_name" autoComplete="off" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+            </Field>
+            <Field label={t("register.phone")} htmlFor="phone" hint={t("register.phoneHint")}>
+              <Input
+                id="phone"
+                inputMode="tel"
+                autoComplete="off"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+              />
+            </Field>
           </div>
-          <div style={{ marginBottom: 12 }}>
-            <label htmlFor="full_name">Mother's full name</label>
-            <br />
-            <input id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-          </div>
-          <div style={{ marginBottom: 12 }}>
-            <label htmlFor="phone">Contact phone</label>
-            <br />
-            <input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} required />
-            <p style={{ fontSize: 12, color: "#777", margin: "4px 0 0" }}>
-              A phone number may be shared by more than one household member — it is never used as
-              anyone's identity.
-            </p>
-          </div>
+          </Section>
 
-          <fieldset style={{ marginBottom: 12 }}>
-            <legend>Age / date of birth</legend>
-            <label>
-              <input
-                id="age_precision_unknown"
-                type="radio"
-                name="age_precision"
-                checked={agePrecision === "UNKNOWN"}
-                onChange={() => setAgePrecision("UNKNOWN")}
-              />{" "}
-              Unknown
-            </label>
-            <br />
-            <label>
-              <input
-                id="age_precision_exact_dob"
-                type="radio"
-                name="age_precision"
-                checked={agePrecision === "EXACT_DOB"}
-                onChange={() => setAgePrecision("EXACT_DOB")}
-              />{" "}
-              Exact date of birth:{" "}
-              <input
+          <Section icon={CalendarDays} title={t("register.sectionAge")}>
+          <fieldset className="space-y-1 rounded-lg border border-line bg-page/60 p-3 md:p-4">
+            <legend className="sr-only">{t("register.ageLegend")}</legend>
+            {ageOption("UNKNOWN", t("register.ageUnknown"))}
+            {ageOption(
+              "EXACT_DOB",
+              t("register.ageExact"),
+              <Input
                 id="date_of_birth_input"
                 type="date"
+                aria-label={t("register.ageExact")}
                 value={dateOfBirth}
                 disabled={agePrecision !== "EXACT_DOB"}
                 onChange={(e) => setDateOfBirth(e.target.value)}
                 required={agePrecision === "EXACT_DOB"}
-              />
-            </label>
-            <br />
-            <label>
-              <input
-                id="age_precision_year_only"
-                type="radio"
-                name="age_precision"
-                checked={agePrecision === "YEAR_ONLY"}
-                onChange={() => setAgePrecision("YEAR_ONLY")}
-              />{" "}
-              Year of birth only:{" "}
-              <input
+                className="w-48"
+              />,
+            )}
+            {ageOption(
+              "YEAR_ONLY",
+              t("register.ageYearOnly"),
+              <Input
                 id="birth_year_input"
                 type="number"
                 inputMode="numeric"
+                aria-label={t("register.ageYearOnly")}
                 value={birthYear}
                 disabled={agePrecision !== "YEAR_ONLY"}
                 onChange={(e) => setBirthYear(e.target.value)}
                 required={agePrecision === "YEAR_ONLY"}
-                style={{ width: 80 }}
-              />
-            </label>
-            <br />
-            <label>
-              <input
-                id="age_precision_approximate"
-                type="radio"
-                name="age_precision"
-                checked={agePrecision === "APPROXIMATE_AGE"}
-                onChange={() => setAgePrecision("APPROXIMATE_AGE")}
-              />{" "}
-              Approximate age (years):{" "}
-              <input
+                className="w-28"
+              />,
+            )}
+            {ageOption(
+              "APPROXIMATE_AGE",
+              t("register.ageApprox"),
+              <Input
                 id="reported_age_years_input"
                 type="number"
                 inputMode="numeric"
+                aria-label={t("register.ageApprox")}
                 value={reportedAgeYears}
                 disabled={agePrecision !== "APPROXIMATE_AGE"}
                 onChange={(e) => setReportedAgeYears(e.target.value)}
                 required={agePrecision === "APPROXIMATE_AGE"}
-                style={{ width: 80 }}
-              />
-            </label>
-            <p style={{ fontSize: 12, color: "#777", margin: "4px 0 0" }}>
-              Never guessed — pick "Unknown" rather than inventing a date.
-            </p>
+                className="w-28"
+              />,
+            )}
+            <Hint>{t("register.ageHint")}</Hint>
           </fieldset>
+          </Section>
 
-          <div style={{ marginBottom: 12 }}>
-            <label htmlFor="history">Reported medical history (as told by the family, optional)</label>
-            <br />
-            <textarea
-              id="history"
-              value={medicalHistory}
-              onChange={(e) => setMedicalHistory(e.target.value)}
-              rows={2}
-              style={{ width: "100%" }}
-            />
-          </div>
-          <div style={{ marginBottom: 12 }}>
-            <label htmlFor="allergies">Known allergies / current medicines (optional)</label>
-            <br />
-            <textarea
-              id="allergies"
-              value={allergies}
-              onChange={(e) => setAllergies(e.target.value)}
-              rows={2}
-              style={{ width: "100%" }}
-            />
-          </div>
+          <Section icon={NotebookPen} title={t("register.sectionHistory")}>
+          <Field label={t("register.history")} htmlFor="history">
+            <Textarea id="history" value={medicalHistory} onChange={(e) => setMedicalHistory(e.target.value)} rows={2} />
+          </Field>
+          <Field label={t("register.allergies")} htmlFor="allergies">
+            <Textarea id="allergies" value={allergies} onChange={(e) => setAllergies(e.target.value)} rows={2} />
+          </Field>
+          </Section>
         </fieldset>
 
         {registeredPerson && (
-          <p>
-            {registeredPerson.full_name} is registered. Opening the pregnancy episode didn't finish —
-            try again.
-          </p>
+          <Alert kind="pending">{t("register.registeredPending", { name: registeredPerson.full_name })}</Alert>
         )}
-        {error && <p style={{ color: "crimson" }}>{error}</p>}
-        <button type="submit" disabled={submitting || !facilityId}>
-          {submitting
-            ? "Creating..."
+        {errorText && <Alert kind="problem">{errorText}</Alert>}
+        <Button type="submit" className="w-full md:w-auto" disabled={register.isPending || !facilityId}>
+          {register.isPending
+            ? t("register.submitting")
             : registeredPerson
-              ? "Try opening the episode again"
-              : "Register mother & create episode"}
-        </button>
+              ? t("register.retryEpisode")
+              : t("register.submit")}
+        </Button>
       </form>
-    </div>
+    </Card>
   );
 }

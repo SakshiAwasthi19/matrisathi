@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@import "./tokens.css";
+@import "@fontsource/noto-sans/400.css";
+@import "@fontsource/noto-sans/600.css";
+
+@layer base {
+  html {
+    /* 16px base text; never smaller on phones. */
+    font-size: 16px;
+  }
+  body {
+    @apply bg-page font-sans text-ink antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}

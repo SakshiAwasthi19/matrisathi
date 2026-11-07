@@ -1,61 +1,108 @@
+import { useMutation } from "@tanstack/react-query";
+import { Building2, CircleHelp, HeartPulse, LogIn, Smartphone, type LucideIcon } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../api/client";
+import { Button } from "../components/ui/button";
+import { Field, Input } from "../components/ui/field";
+import { Alert } from "../components/ui/status";
 import { useSession } from "../state/session";
 
-export function Login({ notice }: { notice?: string | null }) {
-  const { setStaff } = useSession();
+// How the system behaves (product principles), not clinical claims.
+const POINTS: { icon: LucideIcon; key: string }[] = [
+  { icon: Smartphone, key: "login.pointSharedPhone" },
+  { icon: CircleHelp, key: "login.pointUnknown" },
+  { icon: Building2, key: "login.pointFacility" },
+];
+
+export function Login() {
+  const { t } = useTranslation();
+  const { setStaff, sessionEnded } = useSession();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
-    try {
-      const staff = await api.login(username, password);
-      setStaff(staff);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Login failed");
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  const login = useMutation({
+    mutationFn: () => api.login(username, password),
+    onSuccess: (staff) => setStaff(staff),
+  });
+
+  // The server's message is deliberately generic ("Invalid username or
+  // password"), so it is safe to show as-is.
+  const errorText = login.error
+    ? login.error instanceof ApiError
+      ? login.error.message
+      : t("login.failed")
+    : null;
 
   return (
-    <div style={{ maxWidth: 360, margin: "4rem auto", fontFamily: "sans-serif" }}>
-      <h1>MatriSathi — Staff Login</h1>
-      {notice && <p role="status">{notice}</p>}
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 12 }}>
-          <label htmlFor="username">Username</label>
-          <br />
-          <input
-            id="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            autoComplete="username"
-            required
-          />
+    <div className="flex min-h-[calc(100dvh-2.5rem)] items-stretch justify-center px-4 py-6 md:py-12">
+      <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl bg-surface shadow-raised md:grid-cols-[1.1fr_1fr]">
+        {/* Brand panel: full on desktop, compact strip on phones. */}
+        <div className="relative overflow-hidden bg-linear-to-br from-brand-deep via-brand to-brand-strong px-6 py-8 text-brand-ink md:px-10 md:py-12">
+          <span aria-hidden className="pointer-events-none absolute -top-24 -left-16 size-72 rounded-full border-[36px] border-white/5" />
+          <span aria-hidden className="pointer-events-none absolute -right-20 -bottom-24 size-80 rounded-full border-[40px] border-white/5" />
+          <div className="relative flex items-center gap-3">
+            <span className="inline-flex size-11 items-center justify-center rounded-xl bg-white/15">
+              <HeartPulse aria-hidden className="size-6" />
+            </span>
+            <span className="text-2xl font-semibold">{t("app.name")}</span>
+          </div>
+          <h1 className="relative mt-8 hidden text-3xl leading-tight font-semibold md:block">{t("login.heroTitle")}</h1>
+          <p className="relative mt-3 hidden text-lg text-white/85 md:block">{t("login.heroBody")}</p>
+          <ul className="relative mt-10 hidden space-y-5 md:block">
+            {POINTS.map(({ icon: Icon, key }) => (
+              <li key={key} className="flex items-start gap-3 text-base text-white/90">
+                <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-white/12">
+                  <Icon aria-hidden className="size-4" />
+                </span>
+                <span className="pt-1.5">{t(key)}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <label htmlFor="password">Password</label>
-          <br />
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-          />
+
+        <div className="flex flex-col justify-center px-6 py-8 md:px-10 md:py-12">
+          <h2 className="text-2xl font-semibold">{t("login.title")}</h2>
+          <p className="mt-1 text-base text-muted">{t("login.subtitle")}</p>
+          {sessionEnded && (
+            <Alert kind="info" className="mt-5">
+              {t("login.sessionEnded")}
+            </Alert>
+          )}
+          <form
+            className="mt-6 space-y-5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              login.mutate();
+            }}
+          >
+            <Field label={t("login.username")} htmlFor="username">
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+                required
+              />
+            </Field>
+            <Field label={t("login.password")} htmlFor="password">
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+            </Field>
+            {errorText && <Alert kind="problem">{errorText}</Alert>}
+            <Button type="submit" className="w-full" disabled={login.isPending}>
+              <LogIn aria-hidden className="size-4" />
+              {login.isPending ? t("login.submitting") : t("login.submit")}
+            </Button>
+          </form>
         </div>
-        {error && <p style={{ color: "crimson" }}>{error}</p>}
-        <button type="submit" disabled={submitting}>
-          {submitting ? "Signing in..." : "Sign in"}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }
