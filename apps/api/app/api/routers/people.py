@@ -11,10 +11,13 @@ from app.core.deps import (
     require_csrf_header,
     require_facility_membership,
 )
+from app.api.routers.pregnancies import to_out as episode_to_out
 from app.models.audit import AuditOutcome
 from app.models.identity import ContactMethod, ContactType, Person
+from app.models.pregnancy import PregnancyEpisode
 from app.models.staff import StaffMembership, StaffUser
 from app.schemas.person import PersonCreate, PersonOut
+from app.schemas.pregnancy import PregnancyEpisodeOut
 from app.services import audit_service, idempotency_service
 
 router = APIRouter(prefix="/people", tags=["people"])
@@ -234,6 +237,49 @@ def get_person(
         metadata={},
     )
     return _to_out(db, person, contact)
+
+
+@router.get("/{person_id}/episodes", response_model=list[PregnancyEpisodeOut])
+def list_person_episodes(
+    person_id: str,
+    db: Session = Depends(get_db),
+    staff: StaffUser = Depends(get_current_staff),
+) -> list[PregnancyEpisodeOut]:
+    """A mother's pregnancy episodes, newest first, so staff can continue her
+    active one instead of opening another (D13). Same facility scoping as
+    reading the person: a mother outside the caller's facilities is a 404."""
+    person = db.get(Person, uuid.UUID(person_id))
+    if person is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    try:
+        require_facility_membership(db, staff, person.registering_facility_id)
+    except HTTPException:
+        audit_service.record_event(
+            actor_staff_user_id=staff.id,
+            action="list_episodes",
+            entity_type="Person",
+            entity_id=str(person.id),
+            outcome=AuditOutcome.DENIED,
+            metadata={},
+        )
+        raise
+
+    episodes = (
+        db.query(PregnancyEpisode)
+        .filter(PregnancyEpisode.mother_person_id == person.id)
+        .order_by(PregnancyEpisode.created_at.desc())
+        .all()
+    )
+    audit_service.record_event(
+        actor_staff_user_id=staff.id,
+        action="list_episodes",
+        entity_type="Person",
+        entity_id=str(person.id),
+        outcome=AuditOutcome.SUCCESS,
+        metadata={"count": len(episodes)},
+    )
+    return [episode_to_out(e, person.full_name) for e in episodes]
 
 
 @router.post("/{person_id}/contact/verify", response_model=PersonOut)

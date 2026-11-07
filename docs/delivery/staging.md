@@ -118,3 +118,29 @@ Completed in W1-B2 (adds `VITE_ENV_LABEL` and the STAGING banner). Until then:
 | App role cannot run DDL | database grants | `test_app_db_role_cannot_run_ddl` |
 | `/health` reports the environment | `apps/api/app/main.py` | `test_health_reports_environment_label` |
 | Login and refresh require the CSRF header | `apps/api/app/api/routers/auth.py` | `test_login_requires_csrf_header`, `test_refresh_requires_csrf_header` |
+
+## Duplicate active episodes (migration `a13d5e0c7f01`)
+
+From W1-A5 (D13) a mother can have at most one ACTIVE pregnancy episode. If a database already holds a mother with more than one, the migration stops with `… mother(s) have more than one ACTIVE pregnancy episode … No data was changed.` A brand-new staging database never hits this.
+
+For **synthetic** development or team data only, as the migrator role:
+
+```sql
+-- 1. How many mothers are affected
+SELECT mother_person_id, count(*) AS active_episodes
+FROM pregnancy_episode WHERE status = 'ACTIVE'
+GROUP BY mother_person_id HAVING count(*) > 1;
+
+-- 2. Keep each mother's newest ACTIVE episode; close the older ones
+UPDATE pregnancy_episode AS e
+SET status = 'CLOSED', closed_at = now()
+WHERE e.status = 'ACTIVE'
+  AND EXISTS (
+    SELECT 1 FROM pregnancy_episode AS newer
+    WHERE newer.mother_person_id = e.mother_person_id
+      AND newer.status = 'ACTIVE'
+      AND newer.created_at > e.created_at
+  );
+```
+
+Then run `uv run alembic upgrade head` again. Never run step 2 on real patient data: closing an episode there is a clinical-record decision for a person, not a script.

@@ -72,14 +72,17 @@
     "contactLabel": "Contact",
     "contactConfirmedBy": "Confirmed by {{name}} on {{date}}",
     "aStaffMember": "a staff member",
-    "select": "Select & create episode",
     "selecting": "Opening…",
     "openFailed": "Could not open this record.",
     "confirmNumber": "Confirm this is their number",
     "confirmFailed": "Could not confirm the contact.",
     "startTitle": "Search before you register",
     "startBody": "Search by phone, name or both. If the mother is not found, register her with \"Register new mother\".",
-    "matchHint": "Check the name and age before choosing. A shared phone can belong to more than one person."
+    "matchHint": "Check the name and age before choosing. A shared phone can belong to more than one person.",
+    "continueEpisode": "Continue episode",
+    "startEpisode": "Start pregnancy episode",
+    "checkingEpisodes": "Checking episodes…",
+    "activeEpisode": "Active pregnancy episode"
   },
   "register": {
     "title": "Register a mother and open a pregnancy episode",
@@ -124,7 +127,6 @@
     "age": "Age / date of birth",
     "history": "Reported medical history",
     "allergies": "Known allergies / medicines",
-    "contact": "Contact ({{phone}})",
     "contactConfirmedBy": "Confirmed by {{name}} on {{date}}",
     "contactNotConfirmed": "Not yet confirmed with the family (staff confirmation only; no OTP).",
     "confirmNumber": "Confirm this is their number",
