@@ -604,12 +604,11 @@
   "landing": {
     "signIn": "Staff sign in",
     "eyebrow": "For maternal care teams in India",
-    "title": "Every mother followed, from first visit to birth.",
     "body": "MatriSathi is a shared workspace for coordinators, nurses, ASHAs and doctors to register mothers, keep visits on track, collect reports and plan for birth — on any phone.",
     "ctaPrimary": "Sign in to your workspace",
     "ctaSecondary": "How it works",
     "pilotNote": "In development. The current environment uses synthetic data only.",
-    "sketchCaption": "Illustration of the staff workspace",
+    "sketchCaption": "Illustration of the staff workspace, with synthetic names",
     "featuresTitle": "What your team can do",
     "featuresBody": "Built around the everyday work of a facility, not around a form.",
     "feature": {
@@ -629,28 +628,9 @@
         "title": "Birth plan",
         "body": "Where to go, who to call and how to travel, printed for the family."
       },
-      "roles": {
-        "title": "Right access for each role",
-        "body": "Coordinators, nurses, ASHAs and doctors each see what their work needs."
-      },
       "urgent": {
         "title": "Urgent help, always one tap away",
         "body": "A public page per facility with the numbers to call. No sign-in needed."
-      }
-    },
-    "howTitle": "How it works",
-    "how": {
-      "1": {
-        "title": "Register once",
-        "body": "Find the mother or register her, with nothing guessed: unknown stays unknown."
-      },
-      "2": {
-        "title": "Plan and follow up",
-        "body": "A clinician publishes the care plan. Visits and tasks follow from it."
-      },
-      "3": {
-        "title": "Prepare for birth",
-        "body": "Collect reports, make referrals and print the family's birth plan."
       }
     },
     "principlesTitle": "Built on clear principles",
@@ -671,7 +651,68 @@
         "title": "Facility-scoped access",
         "body": "Staff see only the records of the facilities they work at."
       }
-    }
+    },
+    "navLabel": "Page sections",
+    "nav": {
+      "features": "Features",
+      "journey": "How it works",
+      "principles": "Principles"
+    },
+    "titleLead": "Every mother followed,",
+    "titleAccent": "from first visit to birth.",
+    "builtFor": "Built for the whole care team",
+    "mock": {
+      "record": "Pregnancy record",
+      "name": "Sample Mother A",
+      "nextStep": "Next step",
+      "datingConfirmed": "Dating confirmed",
+      "contactPending": "Contact not confirmed",
+      "edd": "Expected",
+      "visits": "Visits",
+      "reports": "Reports",
+      "upNext": "Up next",
+      "task1": "Call about Thursday visit",
+      "task2": "Collect outside report",
+      "today": "Today",
+      "thu": "Thu",
+      "saved": "Saved",
+      "urgent": "Urgent help · 1 tap"
+    },
+    "journeyEyebrow": "How it works",
+    "journeyTitle": "One record that follows the whole pregnancy",
+    "journeyBody": "Each step builds on the last, so nothing is lost between visits, staff or facilities.",
+    "journey": {
+      "register": {
+        "short": "Register",
+        "title": "Register once",
+        "body": "Find her first, or register her. Unknown stays unknown."
+      },
+      "plan": {
+        "short": "Plan",
+        "title": "Care plan",
+        "body": "A clinician publishes the plan; visits follow from it."
+      },
+      "visits": {
+        "short": "Visits",
+        "title": "Visits & follow-up",
+        "body": "A missed visit becomes one task with a named owner."
+      },
+      "reports": {
+        "short": "Reports",
+        "title": "Reports & referrals",
+        "body": "Outside reports and referrals, reviewed by a doctor."
+      },
+      "birth": {
+        "short": "Birth",
+        "title": "Birth plan",
+        "body": "Where to go and who to call, printed for the family."
+      }
+    },
+    "featuresEyebrow": "Features",
+    "principlesEyebrow": "Principles",
+    "principlesBody": "Decisions that protect mothers and the staff who care for them.",
+    "ctaTitle": "Ready to start your shift?",
+    "ctaBody": "Sign in with the account your administrator gave you."
   },
   "messages": {
     "title": "Messages",
