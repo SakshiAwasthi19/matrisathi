@@ -13,13 +13,39 @@
     "signOut": "Sign out",
     "signingOut": "Signing out…",
     "today": "Today",
-    "contacts": "Local contacts"
+    "contacts": "Local contacts",
+    "overview": "Overview",
+    "messages": "Messages",
+    "children": "Children",
+    "insights": "Insights",
+    "previewTag": "Preview",
+    "facility": "Facility",
+    "urgentHelp": "Urgent help",
+    "quickFind": "Find a mother by phone or name…",
+    "skip": "Skip to content",
+    "open": "Open menu",
+    "close": "Close menu",
+    "bottom": "Quick navigation",
+    "more": "More",
+    "group": {
+      "work": "Work",
+      "network": "Network",
+      "preview": "Coming next"
+    },
+    "role": {
+      "ASHA": "ASHA",
+      "NURSE": "Nurse",
+      "COORDINATOR": "Coordinator",
+      "DOCTOR": "Doctor"
+    },
+    "mothersShort": "Mothers"
   },
   "common": {
     "loading": "Loading…",
     "retry": "Try again",
     "backHome": "Back to find or register",
-    "syntheticOnly": "Synthetic data only. Never enter a real person's details."
+    "syntheticOnly": "Synthetic data only. Never enter a real person's details.",
+    "backToOverview": "Back to overview"
   },
   "states": {
     "errorTitle": "Something went wrong",
@@ -49,12 +75,14 @@
     "pointSharedPhone": "Built for shared phones: one number never merges two people.",
     "pointUnknown": "Nothing is guessed: unknown stays unknown.",
     "pointFacility": "You see only the records of the facilities you work at.",
-    "subtitle": "Sign in with the account your administrator gave you."
+    "subtitle": "Sign in with the account your administrator gave you.",
+    "aboutLink": "What is MatriSathi?"
   },
   "mothers": {
     "title": "Mothers",
     "tabFind": "Find existing mother",
-    "tabRegister": "Register new mother"
+    "tabRegister": "Register new mother",
+    "description": "Search by phone or name first. Register only if she is not found."
   },
   "find": {
     "title": "Find an existing mother",
@@ -137,7 +165,14 @@
     "reloadNote": "This record is loaded from the server each time, so reloading the page shows what is saved.",
     "summary": "Episode summary",
     "openedOn": "Opened {{date}}",
-    "contactLabel": "Contact phone"
+    "contactLabel": "Contact phone",
+    "tab": {
+      "label": "Record sections",
+      "overview": "Overview",
+      "care": "Visits & tasks",
+      "records": "Reports & records",
+      "birth": "Birth plan"
+    }
   },
   "age": {
     "dob": "Date of birth {{date}}",
@@ -282,7 +317,12 @@
       "overdueCount_other": "{{count}} overdue",
       "emptyMine": "Nothing assigned to you right now.",
       "emptyAll": "No open tasks in your facilities.",
-      "note": "\"Overdue\" means an administrative delay. It is never a clinical warning."
+      "note": "\"Overdue\" means an administrative delay. It is never a clinical warning.",
+      "emptyBody": "New tasks appear here when visits are missed, help is requested, or a plan needs follow-up.",
+      "groupOverdue": "Overdue",
+      "groupToday": "Due today",
+      "groupLater": "Coming up",
+      "groupUndated": "No due date"
     }
   },
   "records": {
@@ -510,5 +550,174 @@
     "hoursNotSet": "Not yet confirmed by the facility.",
     "noMonitoring": "Messages to the support team are not watched for emergencies. In an emergency, call.",
     "noLocation": "This page does not use your location."
+  },
+  "toast": {
+    "saved": "Saved",
+    "contactConfirmed": "Contact number confirmed"
+  },
+  "sample": {
+    "badge": "Preview · sample data",
+    "tooltip": "Invented sample data to show the planned screen. Not connected to real records.",
+    "noticeTitle": "Preview with sample data"
+  },
+  "overview": {
+    "greetMorning": "Good morning, {{name}}",
+    "greetAfternoon": "Good afternoon, {{name}}",
+    "greetEvening": "Good evening, {{name}}",
+    "description": "Open work across your facility, and the quickest ways to get to it.",
+    "findOrRegister": "Find or register",
+    "kpiLabel": "Open work",
+    "kpiOpen": "Open tasks",
+    "kpiOpenHint": "Across your facilities",
+    "kpiMine": "Assigned to you",
+    "kpiMineHint": "As owner or backup",
+    "kpiDueToday": "Due today",
+    "kpiDueTodayHint": "Not yet overdue",
+    "kpiOverdue": "Overdue",
+    "kpiOverdueHint": "Past due time (administrative)",
+    "kpiUnassigned_one": "{{count}} without an owner",
+    "kpiUnassigned_other": "{{count}} without an owner",
+    "upNext": "Up next",
+    "upNextBody": "Overdue first, then by due date.",
+    "viewAll": "View all",
+    "upNextEmpty": "Nothing open right now",
+    "upNextEmptyBody": "New follow-ups will appear here.",
+    "quickActions": "Quick actions",
+    "qaFind": "Find or register a mother",
+    "qaFindBody": "Search first, so no one is registered twice",
+    "qaToday": "Today's work",
+    "qaTodayBody": "Your tasks, grouped by when they are due",
+    "qaContacts": "Local contacts",
+    "qaContactsBody": "Transport, hospitals and services nearby",
+    "qaUrgent": "Urgent help page",
+    "qaUrgentBody": "The public page printed on birth plans",
+    "byKind": "Open work by type",
+    "byKindBody": "Live count of open tasks.",
+    "byKindEmpty": "No open tasks.",
+    "registrations": "New registrations per week",
+    "registrationsBody": "Mothers registered at your facility.",
+    "visits": "Planned visits per week",
+    "visitsBody": "Attended and missed. Missed visits create an administrative follow-up.",
+    "attended": "Attended",
+    "missed": "Missed"
+  },
+  "landing": {
+    "signIn": "Staff sign in",
+    "eyebrow": "For maternal care teams in India",
+    "title": "Every mother followed, from first visit to birth.",
+    "body": "MatriSathi is a shared workspace for coordinators, nurses, ASHAs and doctors to register mothers, keep visits on track, collect reports and plan for birth — on any phone.",
+    "ctaPrimary": "Sign in to your workspace",
+    "ctaSecondary": "How it works",
+    "pilotNote": "In development. The current environment uses synthetic data only.",
+    "sketchCaption": "Illustration of the staff workspace",
+    "featuresTitle": "What your team can do",
+    "featuresBody": "Built around the everyday work of a facility, not around a form.",
+    "feature": {
+      "find": {
+        "title": "Find before you register",
+        "body": "Search by phone or name first. Shared phones never merge two people."
+      },
+      "visits": {
+        "title": "Visits and follow-ups",
+        "body": "Care plans create visits. A missed visit becomes one task with a named owner."
+      },
+      "records": {
+        "title": "Reports and referrals",
+        "body": "Outside reports, prescriptions and referrals in one record, reviewed by a doctor."
+      },
+      "birth": {
+        "title": "Birth plan",
+        "body": "Where to go, who to call and how to travel, printed for the family."
+      },
+      "roles": {
+        "title": "Right access for each role",
+        "body": "Coordinators, nurses, ASHAs and doctors each see what their work needs."
+      },
+      "urgent": {
+        "title": "Urgent help, always one tap away",
+        "body": "A public page per facility with the numbers to call. No sign-in needed."
+      }
+    },
+    "howTitle": "How it works",
+    "how": {
+      "1": {
+        "title": "Register once",
+        "body": "Find the mother or register her, with nothing guessed: unknown stays unknown."
+      },
+      "2": {
+        "title": "Plan and follow up",
+        "body": "A clinician publishes the care plan. Visits and tasks follow from it."
+      },
+      "3": {
+        "title": "Prepare for birth",
+        "body": "Collect reports, make referrals and print the family's birth plan."
+      }
+    },
+    "principlesTitle": "Built on clear principles",
+    "principle": {
+      "sharedPhone": {
+        "title": "Made for shared phones",
+        "body": "One number can belong to a family. Records are never merged automatically."
+      },
+      "unknown": {
+        "title": "Nothing is guessed",
+        "body": "Dates and ages that are not known are recorded as unknown."
+      },
+      "assistive": {
+        "title": "Assistive, not diagnostic",
+        "body": "The system organises care. Clinical decisions stay with clinicians."
+      },
+      "facility": {
+        "title": "Facility-scoped access",
+        "body": "Staff see only the records of the facilities they work at."
+      }
+    }
+  },
+  "messages": {
+    "title": "Messages",
+    "description": "Family messages in one inbox, linked to the right mother's record.",
+    "notice": "Messaging is planned for a later phase. These conversations are invented examples; nothing is sent or received.",
+    "inbox_one": "Inbox · {{count}} conversation",
+    "inbox_other": "Inbox · {{count}} conversations",
+    "back": "Back to inbox",
+    "link": "Link to a mother",
+    "notAvailable": "Not available in the preview",
+    "composerDisabled": "Replying is not available in the preview.",
+    "status": {
+      "open": "Open",
+      "unlinked": "Not linked",
+      "closed": "Closed"
+    }
+  },
+  "children": {
+    "title": "Children",
+    "description": "Follow-up for babies after birth, linked to the mother's record.",
+    "notice": "Child follow-up is planned for a later phase. The children and the schedule shown are placeholders, not clinically approved.",
+    "listTitle": "Follow-up list",
+    "listBody": "Next scheduled contact for each child.",
+    "col": {
+      "child": "Child",
+      "mother": "Mother",
+      "age": "Age",
+      "next": "Next step",
+      "status": "Status"
+    },
+    "status": {
+      "due": "Due",
+      "given": "Recorded",
+      "unknown": "Unknown"
+    }
+  },
+  "insights": {
+    "title": "Insights",
+    "description": "How the programme is running, week by week.",
+    "notice": "Reporting is planned for a later phase. Every number on this page is sample data.",
+    "tilesLabel": "Programme figures",
+    "active": "Active pregnancies",
+    "visits": "Visits this month",
+    "closedOnTime": "Follow-ups closed on time",
+    "reports": "Reports awaiting review",
+    "referrals": "Referral progress",
+    "referralsBody": "How many referrals reached each step."
   }
 }

@@ -8,6 +8,7 @@ import { PageHeader } from "../components/PageHeader";
 import { errorStateKind, PageState } from "../components/PageState";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
+import { CardSkeleton } from "../components/ui/kit";
 import { Field, Input, Select } from "../components/ui/field";
 import { Alert, StatusBadge } from "../components/ui/status";
 import { formatDate } from "../lib/format";
@@ -104,8 +105,7 @@ export function LocalContacts() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("records.contacts.title")} />
-      <p className="text-base text-muted">{t("records.contacts.intro")}</p>
+      <PageHeader title={t("records.contacts.title")} description={t("records.contacts.intro")} />
       {facilities.length > 1 && (
         <Field label={t("records.contacts.facility")} htmlFor="contacts_facility">
           <Select id="contacts_facility" value={facilityId} onChange={(e) => setFacilityId(e.target.value)} className="sm:w-80">
@@ -117,11 +117,16 @@ export function LocalContacts() {
           </Select>
         </Field>
       )}
-      {list.isPending && <PageState kind="loading" />}
+      {list.isPending && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <CardSkeleton lines={3} />
+          <CardSkeleton lines={3} />
+        </div>
+      )}
       {list.isError && <PageState kind={errorStateKind(list.error)} />}
       {list.data?.length === 0 && <PageState kind="empty" title={t("records.contacts.empty")} />}
       {list.data && list.data.length > 0 && (
-        <ul className="grid gap-4 md:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {list.data.map((c) => (
             <ContactRow key={c.id} c={c} facilityId={facilityId} />
           ))}

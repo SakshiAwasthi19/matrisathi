@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Building2, CircleHelp, HeartPulse, LogIn, Smartphone, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import { api, ApiError } from "../api/client";
 import { Button } from "../components/ui/button";
 import { Field, Input } from "../components/ui/field";
@@ -23,6 +24,7 @@ export function Login() {
 
   const login = useMutation({
     mutationFn: () => api.login(username, password),
+    meta: { silent: true },
     onSuccess: (staff) => setStaff(staff),
   });
 
@@ -35,24 +37,27 @@ export function Login() {
     : null;
 
   return (
-    <div className="flex min-h-[calc(100dvh-2.5rem)] items-stretch justify-center px-4 py-6 md:py-12">
-      <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl bg-surface shadow-raised md:grid-cols-[1.1fr_1fr]">
+    <div className="flex min-h-[calc(100dvh-2.5rem)] items-center justify-center px-4 py-6 md:py-12">
+      <div className="grid w-full max-w-5xl animate-rise overflow-hidden rounded-2xl border border-line bg-surface shadow-pop md:grid-cols-[1.1fr_1fr]">
         {/* Brand panel: full on desktop, compact strip on phones. */}
-        <div className="relative overflow-hidden bg-linear-to-br from-brand-deep via-brand to-brand-strong px-6 py-8 text-brand-ink md:px-10 md:py-12">
-          <span aria-hidden className="pointer-events-none absolute -top-24 -left-16 size-72 rounded-full border-[36px] border-white/5" />
-          <span aria-hidden className="pointer-events-none absolute -right-20 -bottom-24 size-80 rounded-full border-[40px] border-white/5" />
-          <div className="relative flex items-center gap-3">
-            <span className="inline-flex size-11 items-center justify-center rounded-xl bg-white/15">
+        <div className="relative overflow-hidden bg-brand-deep px-6 py-8 text-brand-ink md:px-10 md:py-12">
+          {/* Fine dot grid; purely decorative. */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(white_1px,transparent_1px)] [background-size:18px_18px]"
+          />
+          <Link to="/welcome" className="relative flex w-fit items-center gap-3">
+            <span className="inline-flex size-11 items-center justify-center rounded-xl bg-white/12 ring-1 ring-white/15">
               <HeartPulse aria-hidden className="size-6" />
             </span>
             <span className="text-2xl font-semibold">{t("app.name")}</span>
-          </div>
+          </Link>
           <h1 className="relative mt-8 hidden text-3xl leading-tight font-semibold md:block">{t("login.heroTitle")}</h1>
           <p className="relative mt-3 hidden text-lg text-white/85 md:block">{t("login.heroBody")}</p>
           <ul className="relative mt-10 hidden space-y-5 md:block">
             {POINTS.map(({ icon: Icon, key }) => (
               <li key={key} className="flex items-start gap-3 text-base text-white/90">
-                <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-white/12">
+                <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15">
                   <Icon aria-hidden className="size-4" />
                 </span>
                 <span className="pt-1.5">{t(key)}</span>
@@ -62,7 +67,7 @@ export function Login() {
         </div>
 
         <div className="flex flex-col justify-center px-6 py-8 md:px-10 md:py-12">
-          <h2 className="text-2xl font-semibold">{t("login.title")}</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">{t("login.title")}</h2>
           <p className="mt-1 text-base text-muted">{t("login.subtitle")}</p>
           {sessionEnded && (
             <Alert kind="info" className="mt-5">
@@ -101,6 +106,11 @@ export function Login() {
               {login.isPending ? t("login.submitting") : t("login.submit")}
             </Button>
           </form>
+          <p className="mt-6 text-center text-sm text-muted">
+            <Link to="/welcome" className="font-semibold text-brand hover:text-brand-strong">
+              {t("login.aboutLink")}
+            </Link>
+          </p>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router";
 import { api, setSessionExpiredHandler, type Staff } from "./api/client";
@@ -7,8 +7,10 @@ import { AppShell } from "./components/AppShell";
 import { EnvBanner } from "./components/EnvBanner";
 import { PageState } from "./components/PageState";
 import { Button } from "./components/ui/button";
+import { ToastProvider } from "./components/ui/toast";
 import { queryClient } from "./lib/queryClient";
 import { BirthPlanPrint } from "./pages/BirthPlanPrint";
+import { Overview } from "./pages/Overview";
 import { LocalContacts } from "./pages/LocalContacts";
 import { NextStep } from "./pages/NextStep";
 import { UrgentHelp } from "./pages/UrgentHelp";
@@ -17,6 +19,16 @@ import { MotherRegister } from "./pages/MotherRegister";
 import { PregnancyView } from "./pages/PregnancyView";
 import { Today } from "./pages/Today";
 import { SessionContext, useSession, type SessionState } from "./state/session";
+
+// Rarely-visited screens load on demand to keep the first download small on phones.
+const Landing = lazy(() => import("./pages/Landing").then((m) => ({ default: m.Landing })));
+const Messages = lazy(() => import("./pages/preview/Messages").then((m) => ({ default: m.Messages })));
+const Children = lazy(() => import("./pages/preview/Children").then((m) => ({ default: m.Children })));
+const Insights = lazy(() => import("./pages/preview/Insights").then((m) => ({ default: m.Insights })));
+
+function Lazy({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<PageState kind="loading" />}>{children}</Suspense>;
+}
 
 /** Old links used hash routing (#/episodes/<id>); send them to the real URL. */
 function LegacyHashRedirect() {
@@ -92,6 +104,9 @@ function SessionRoot({ children }: { children: ReactNode }) {
 function RequireAuth({ children }: { children: ReactNode }) {
   const { staff } = useSession();
   const location = useLocation();
+  // A signed-out visit to the home address shows the public page; any other
+  // address goes to sign-in and comes back afterwards.
+  if (!staff && location.pathname === "/") return <Navigate to="/welcome" replace />;
   if (!staff) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   return <>{children}</>;
 }
@@ -112,7 +127,7 @@ function NotFound() {
         kind="not-found"
         action={
           <Button asChild variant="secondary">
-            <Link to="/mothers">{t("common.backHome")}</Link>
+            <Link to="/">{t("common.backToOverview")}</Link>
           </Button>
         }
       />
@@ -124,48 +139,56 @@ function NotFound() {
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <EnvBanner />
-        <LegacyHashRedirect />
-        <Routes>
-          {/* Public and signed-out: never waits for the session check (F014). */}
-          <Route path="/urgent-help" element={<UrgentHelp />} />
-          <Route path="/urgent-help/:facilityId" element={<UrgentHelp />} />
-          <Route
-            path="*"
-            element={
-              <SessionRoot>
-                <Routes>
-                  <Route path="/login" element={<LoginRoute />} />
-                  <Route
-                    element={
-                      <RequireAuth>
-                        <AppShell />
-                      </RequireAuth>
-                    }
-                  >
-                    <Route index element={<Today />} />
-                    <Route path="mothers" element={<MotherRegister />} />
-                    <Route path="contacts" element={<LocalContacts />} />
-                    <Route path="episodes/:episodeId" element={<PregnancyView />} />
-                    <Route path="episodes/:episodeId/next-step" element={<NextStep />} />
-                  </Route>
-                  {/* Printable page: signed in, but without the app header. */}
-                  <Route
-                    path="/episodes/:episodeId/birth-plan/print"
-                    element={
-                      <RequireAuth>
-                        <BirthPlanPrint />
-                      </RequireAuth>
-                    }
-                  />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </SessionRoot>
-            }
-          />
-        </Routes>
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <EnvBanner />
+          <LegacyHashRedirect />
+          <Routes>
+            {/* Public and signed-out: never waits for the session check (F014). */}
+            <Route path="/urgent-help" element={<UrgentHelp />} />
+            <Route path="/urgent-help/:facilityId" element={<UrgentHelp />} />
+            <Route path="/welcome" element={<Lazy><Landing /></Lazy>} />
+            <Route
+              path="*"
+              element={
+                <SessionRoot>
+                  <Routes>
+                    <Route path="/login" element={<LoginRoute />} />
+                    <Route
+                      element={
+                        <RequireAuth>
+                          <AppShell />
+                        </RequireAuth>
+                      }
+                    >
+                      <Route index element={<Overview />} />
+                      <Route path="today" element={<Today />} />
+                      <Route path="mothers" element={<MotherRegister />} />
+                      <Route path="contacts" element={<LocalContacts />} />
+                      <Route path="episodes/:episodeId" element={<PregnancyView />} />
+                      <Route path="episodes/:episodeId/next-step" element={<NextStep />} />
+                      {/* Previews on sample data; each screen is labelled as such. */}
+                      <Route path="messages" element={<Lazy><Messages /></Lazy>} />
+                      <Route path="children" element={<Lazy><Children /></Lazy>} />
+                      <Route path="insights" element={<Lazy><Insights /></Lazy>} />
+                    </Route>
+                    {/* Printable page: signed in, but without the app header. */}
+                    <Route
+                      path="/episodes/:episodeId/birth-plan/print"
+                      element={
+                        <RequireAuth>
+                          <BirthPlanPrint />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </SessionRoot>
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

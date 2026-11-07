@@ -1,64 +1,75 @@
 import { useQuery } from "@tanstack/react-query";
-import { ListChecks, UserRound, Users } from "lucide-react";
+import { AlarmClock, CalendarClock, CalendarDays, CalendarOff, UserRound, Users, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { careApi } from "../api/client";
+import { careApi, type CareTask } from "../api/client";
 import { TaskList } from "../components/care/TaskList";
 import { PageHeader } from "../components/PageHeader";
 import { errorStateKind, PageState } from "../components/PageState";
-import { StatusBadge } from "../components/ui/status";
-import { cn } from "../lib/utils";
+import { CardSkeleton, Tabs } from "../components/ui/kit";
+import { groupTasks } from "../lib/worklist";
 
 type Scope = "mine" | "all";
 
-/** The staff console's home: open, owned work. Never a clinical worklist. */
+function Group({ icon: Icon, title, tasks, tone = "default" }: { icon: LucideIcon; title: string; tasks: CareTask[]; tone?: "default" | "attention" }) {
+  if (tasks.length === 0) return null;
+  return (
+    <section aria-label={title} className="space-y-3">
+      <h2 className="flex items-center gap-2.5 text-base font-semibold">
+        <span
+          className={
+            tone === "attention"
+              ? "inline-flex size-8 items-center justify-center rounded-lg bg-pending-bg text-pending"
+              : "inline-flex size-8 items-center justify-center rounded-lg bg-brand-tint text-brand"
+          }
+        >
+          <Icon aria-hidden className="size-4" />
+        </span>
+        {title}
+        <span className="tabular rounded-full bg-subtle px-2 text-sm text-muted">{tasks.length}</span>
+      </h2>
+      <TaskList tasks={tasks} showMother invalidate={[["tasks"]]} />
+    </section>
+  );
+}
+
+/** Open, owned work. Never a clinical worklist: "overdue" is administrative. */
 export function Today() {
   const { t } = useTranslation();
   const [scope, setScope] = useState<Scope>("mine");
   const tasks = useQuery({ queryKey: ["tasks", scope], queryFn: () => careApi.listTasks(scope === "mine") });
-  const overdue = tasks.data?.filter((x) => x.overdue).length ?? 0;
-
-  const tab = (value: Scope, label: string, Icon: typeof Users) => (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={scope === value}
-      onClick={() => setScope(value)}
-      className={cn(
-        "inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-md px-4 font-semibold md:min-h-10 md:flex-none",
-        scope === value ? "bg-surface text-brand shadow-sm" : "text-muted hover:text-ink",
-      )}
-    >
-      <Icon aria-hidden className="size-4" />
-      {label}
-    </button>
-  );
+  const groups = groupTasks(tasks.data ?? []);
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("care.today.title")} />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="tablist" className="flex w-full gap-1 rounded-lg bg-subtle p-1 md:inline-flex md:w-auto">
-          {tab("mine", t("care.today.mine"), UserRound)}
-          {tab("all", t("care.today.all"), Users)}
-        </div>
-        {overdue > 0 && <StatusBadge kind="attention">{t("care.today.overdueCount", { count: overdue })}</StatusBadge>}
-      </div>
-      <p className="text-sm text-muted">{t("care.today.note")}</p>
+      <PageHeader title={t("care.today.title")} description={t("care.today.note")} />
+      <Tabs<Scope>
+        label={t("care.today.title")}
+        value={scope}
+        onChange={setScope}
+        items={[
+          { value: "mine", label: t("care.today.mine"), icon: UserRound, count: scope === "mine" ? tasks.data?.length : undefined },
+          { value: "all", label: t("care.today.all"), icon: Users, count: scope === "all" ? tasks.data?.length : undefined },
+        ]}
+      />
 
-      {tasks.isPending && <PageState kind="loading" />}
+      {tasks.isPending && (
+        <div className="space-y-3">
+          <CardSkeleton lines={2} />
+          <CardSkeleton lines={2} />
+        </div>
+      )}
       {tasks.isError && <PageState kind={errorStateKind(tasks.error)} />}
       {tasks.data?.length === 0 && (
-        <PageState kind="empty" title={scope === "mine" ? t("care.today.emptyMine") : t("care.today.emptyAll")} />
+        <PageState kind="empty" title={scope === "mine" ? t("care.today.emptyMine") : t("care.today.emptyAll")} body={t("care.today.emptyBody")} />
       )}
       {tasks.data && tasks.data.length > 0 && (
-        <section aria-label={t("care.task.title")} className="space-y-3">
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <ListChecks aria-hidden className="size-5 text-brand" />
-            {t("care.task.title")} ({tasks.data.length})
-          </h2>
-          <TaskList tasks={tasks.data} showMother invalidate={[["tasks"]]} />
-        </section>
+        <div className="space-y-8">
+          <Group icon={AlarmClock} title={t("care.today.groupOverdue")} tasks={groups.overdue} tone="attention" />
+          <Group icon={CalendarClock} title={t("care.today.groupToday")} tasks={groups.today} />
+          <Group icon={CalendarDays} title={t("care.today.groupLater")} tasks={groups.later} />
+          <Group icon={CalendarOff} title={t("care.today.groupUndated")} tasks={groups.undated} />
+        </div>
       )}
     </div>
   );

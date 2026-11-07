@@ -10,13 +10,13 @@ export function initials(name: string): string {
   return (first + last).toUpperCase();
 }
 
-export function Avatar({ name, size = "md" }: { name: string; size?: "md" | "lg" }) {
+export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md" | "lg" }) {
   return (
     <span
       aria-hidden
       className={cn(
         "inline-flex shrink-0 items-center justify-center rounded-full bg-accent-soft font-semibold text-accent",
-        size === "lg" ? "size-14 text-xl" : "size-11 text-base",
+        size === "lg" ? "size-14 text-xl" : size === "sm" ? "size-8 text-xs" : "size-11 text-base",
       )}
     >
       {initials(name)}

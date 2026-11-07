@@ -31,6 +31,7 @@ export function FindMother({ onEpisodeCreated }: { onEpisodeCreated: (episodeId:
 
   const search = useMutation({
     mutationFn: (params: { phone?: string; full_name?: string }) => api.searchPeople(params),
+    meta: { silent: true },
     onSuccess: (found) => setResults(found),
   });
 
@@ -64,6 +65,7 @@ export function FindMother({ onEpisodeCreated }: { onEpisodeCreated: (episodeId:
         throw err;
       }
     },
+    meta: { silent: true },
     onMutate: ({ person }) => setRowError((prev) => ({ ...prev, [person.id]: "" })),
     onSuccess: (episodeId, { person }) => {
       void queryClient.invalidateQueries({ queryKey: ["episodes", person.id] });

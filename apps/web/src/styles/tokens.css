@@ -1,7 +1,10 @@
 /*
- * Design tokens: the single source for colour, type and spacing.
- * Tailwind v4 turns each --color-* / --font-* / --spacing-* here into
- * utility classes (bg-brand, text-ink, border-line, ...).
+ * MatriSathi design tokens: the single source for colour, type, radius and depth.
+ * Tailwind v4 turns each --color-* / --font-* / --shadow-* / --radius-* into
+ * utilities (bg-brand, text-ink, border-line, shadow-card, rounded-card, ...).
+ *
+ * Identity: deep teal (care, trust) on warm paper neutrals, with a marigold
+ * accent for warmth and highlights. Restraint over decoration.
  *
  * Colour rules (CLAUDE_BUILD_PLAN.md Part G):
  * - Red (--color-urgent) is reserved for Urgent help only. Errors are NOT red.
@@ -10,55 +13,93 @@
  * - Every status also shows an icon and a word; colour is never the only signal.
  */
 @theme {
-  --font-sans: "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Noto Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-  /* Surfaces and text */
-  --color-page: #f3f6f6;
+  /* Paper neutrals (warm, low-chroma) */
+  --color-page: #f6f5f1;
   --color-surface: #ffffff;
-  --color-subtle: #eef1f4;
-  --color-line: #cfd6de;
-  --color-ink: #1b2430;
-  --color-muted: #55606e;
+  --color-subtle: #f0efea;
+  --color-sunken: #e9e7e0;
+  --color-line: #e2dfd6;
+  --color-line-strong: #cfcbbf;
+  --color-ink: #1c1b18;
+  --color-ink-2: #3d3b35;
+  --color-muted: #6b6860;
+  --color-faint: #9a968b;
 
-  /* Brand (primary actions, links, focus ring) */
-  --color-brand: #0f6b6b;
-  --color-brand-strong: #0b5252;
+  /* Brand teal */
+  --color-brand: #0e6b68;
+  --color-brand-strong: #0a5552;
+  --color-brand-deep: #083c3b;
+  --color-brand-soft: #e3f0ee;
+  --color-brand-tint: #f1f7f6;
   --color-brand-ink: #ffffff;
-  --color-brand-soft: #e2f0ef;
-  --color-brand-deep: #0a3f45;
-  /* Warm accent for illustrations and avatars (decorative only, never a status) */
-  --color-accent: #c2601e;
-  --color-accent-soft: #fbeadd;
 
-  /* Depth */
-  --shadow-card: 0 1px 2px rgb(16 42 46 / 0.06), 0 2px 8px rgb(16 42 46 / 0.05);
-  --shadow-raised: 0 4px 12px rgb(16 42 46 / 0.08), 0 12px 32px rgb(16 42 46 / 0.08);
+  /* Marigold accent: warmth, highlights, avatars. Decorative, never a status. */
+  --color-accent: #b45f06;
+  --color-accent-bright: #e8952a;
+  --color-accent-soft: #fbf0df;
 
   /* Status: pending review / unknown */
   --color-pending: #8a4b00;
-  --color-pending-bg: #fdf1dc;
-  --color-pending-line: #e7b765;
+  --color-pending-bg: #fdf2dd;
+  --color-pending-line: #ecc278;
 
   /* Status: not recorded */
-  --color-none: #4a5360;
-  --color-none-bg: #eef0f3;
-  --color-none-line: #c3c9d1;
+  --color-none: #57544c;
+  --color-none-bg: #f0efea;
+  --color-none-line: #d3cfc4;
 
   /* Status: confirmed / done */
-  --color-ok: #1d6b35;
-  --color-ok-bg: #e5f4e9;
-  --color-ok-line: #9fd0ad;
+  --color-ok: #1b6b3a;
+  --color-ok-bg: #e6f3ea;
+  --color-ok-line: #a5d2b2;
 
-  /* Problems that are not urgent (errors, failed requests): neutral, never red */
-  --color-problem: #3b3f8c;
-  --color-problem-bg: #ecedfa;
-  --color-problem-line: #b7bae6;
+  /* Problems that are not urgent (errors, failed requests): indigo, never red */
+  --color-problem: #3a3f8f;
+  --color-problem-bg: #edeefb;
+  --color-problem-line: #bcc0ea;
 
-  /* Environment banner (shown everywhere except production) */
+  /* Environment banner (every page except production) */
   --color-env: #4b2a86;
   --color-env-ink: #ffffff;
 
   /* Reserved for the Urgent help page only */
   --color-urgent: #b3261e;
   --color-urgent-ink: #ffffff;
+
+  /* Charts: validated categorical order (see lib/chartPalette.ts) */
+  --color-series-1: #008f86;
+  --color-series-2: #e8952a;
+  --color-series-3: #6a5acd;
+
+  /* Depth: hairline-first, soft shadows only where something floats */
+  --shadow-card: 0 1px 2px rgb(28 27 24 / 0.04), 0 1px 1px rgb(28 27 24 / 0.02);
+  --shadow-raised: 0 2px 6px rgb(28 27 24 / 0.06), 0 12px 28px rgb(28 27 24 / 0.08);
+  --shadow-pop: 0 8px 24px rgb(28 27 24 / 0.12), 0 2px 6px rgb(28 27 24 / 0.08);
+
+  --radius-card: 14px;
+  --radius-control: 10px;
+
+  --animate-fade-in: fade-in 0.28s ease-out both;
+  --animate-rise: rise 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-shimmer: shimmer 1.4s linear infinite;
+  --animate-slide-in: slide-in 0.22s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slide-in {
+    from { transform: translateX(-16px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes shimmer {
+    from { background-position: -400px 0; }
+    to { background-position: 400px 0; }
+  }
 }

@@ -1,18 +1,61 @@
 @import "tailwindcss";
 @import "./tokens.css";
 @import "@fontsource/noto-sans/400.css";
+@import "@fontsource/noto-sans/500.css";
 @import "@fontsource/noto-sans/600.css";
+@import "@fontsource/noto-sans/700.css";
 
 @layer base {
   html {
     /* 16px base text; never smaller on phones. */
     font-size: 16px;
+    -webkit-text-size-adjust: 100%;
   }
   body {
     @apply bg-page font-sans text-ink antialiased;
+    font-feature-settings: "tnum" 0;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.012em;
   }
   :focus-visible {
     outline: 2px solid var(--color-brand);
     outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection {
+    background: var(--color-brand-soft);
+  }
+}
+
+@layer utilities {
+  /* Figures that line up in tables, tiles and charts. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .skeleton {
+    background: linear-gradient(90deg, var(--color-subtle) 0%, var(--color-sunken) 40%, var(--color-subtle) 80%);
+    background-size: 800px 100%;
+    animation: var(--animate-shimmer);
+    border-radius: 8px;
+  }
+}
+
+/* Respect people who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
   }
 }

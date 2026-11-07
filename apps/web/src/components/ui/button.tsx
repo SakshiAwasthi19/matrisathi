@@ -3,18 +3,24 @@ import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 import { cn } from "../../lib/utils";
 
-// 48px touch targets on phones; slightly denser from md (tablet/desktop).
+// 48px touch targets on phones; denser from md (tablet/desktop).
 const buttonVariants = cva(
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-md px-4 text-base font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50 md:min-h-10",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-control)] font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        primary: "bg-brand text-brand-ink hover:bg-brand-strong",
-        secondary: "border border-line bg-surface text-ink hover:bg-subtle",
-        ghost: "text-ink hover:bg-subtle",
+        primary: "bg-brand text-brand-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.12)] hover:bg-brand-strong",
+        secondary: "border border-line bg-surface text-ink shadow-card hover:border-line-strong hover:bg-subtle/60",
+        ghost: "text-ink-2 hover:bg-subtle hover:text-ink",
+        soft: "bg-brand-soft text-brand-strong hover:bg-brand-soft/70",
+      },
+      size: {
+        sm: "min-h-10 px-3 text-sm md:min-h-8",
+        md: "min-h-12 px-4 text-base md:min-h-10 md:text-[0.95rem]",
+        lg: "min-h-12 px-5 text-base md:min-h-12",
       },
     },
-    defaultVariants: { variant: "primary" },
+    defaultVariants: { variant: "primary", size: "md" },
   },
 );
 
@@ -25,9 +31,9 @@ export interface ButtonProps
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
-    return <Comp ref={ref} className={cn(buttonVariants({ variant }), className)} {...props} />;
+    return <Comp ref={ref} className={cn(buttonVariants({ variant, size }), className)} {...props} />;
   },
 );
 Button.displayName = "Button";
