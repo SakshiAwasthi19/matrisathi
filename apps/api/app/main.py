@@ -3,6 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routers import admin, auth, people, pregnancies
 from app.core.config import settings
+from app.core.startup_checks import check_runtime_settings
+
+# Outside development, refuse to start with committed defaults (JWT secret,
+# migrator credentials in the API process, insecure cookies).
+check_runtime_settings(settings)
 
 app = FastAPI(title="MatriSathi API")
 
@@ -24,4 +29,6 @@ app.include_router(api_v1)
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok"}
+    # The environment label lets anyone confirm they are on staging, not a
+    # real deployment. It is a label only, never a secret.
+    return {"status": "ok", "env": settings.env}

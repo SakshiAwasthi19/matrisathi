@@ -76,7 +76,7 @@ def test_org_admin_authority_alone_grants_no_clinical_record_access(client, db_s
     admin = make_staff(db_session, "admin_no_membership")
     make_org_admin(db_session, admin, org)  # org admin, but NO StaffMembership anywhere
 
-    resp = client.post("/api/v1/auth/login", json={"username": "admin_no_membership", "password": "synthetic-password-123"})
+    resp = client.post("/api/v1/auth/login", json={"username": "admin_no_membership", "password": "synthetic-password-123"}, headers=CSRF_HEADERS)
     assert resp.status_code == 200
 
     resp = client.post(

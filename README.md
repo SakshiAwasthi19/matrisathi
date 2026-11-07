@@ -156,44 +156,22 @@ separate from anything in this file.
 
 ## Deploying a staging environment
 
-A bounded, synthetic-data-only staging deployment for people who need to
-see the app without running it locally (e.g. a reviewer who isn't a
-developer) — not a production deployment, and not a substitute for the
-actual hosting/compliance decision (tracker D09) that real patient data
-would require. Two services, each its own manual sign-up — I can't create
-accounts or click through web dashboards, so these steps are for you:
+A bounded, synthetic-data-only staging deployment for reviewers — not
+production, and not a substitute for the hosting/compliance decision
+(tracker D09) that real patient data would require.
 
-**Backend (e.g. Render — any host that runs a long-lived ASGI process
-works; Vercel itself does not fit this app's architecture):**
-1. New Web Service, pointed at `matrisathi/jananisaathi`, root directory
-   `apps/api`.
-2. Build command: `pip install uv && uv sync --frozen`
-   Start command: `uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-   (Running migrations on every boot is harmless — Alembic no-ops once
-   already at head — and keeps this simple for a small staging app.)
-3. Environment variables (set in the host's dashboard, never committed):
-   `DATABASE_URL_MIGRATOR` / `DATABASE_URL_APP` (the same shared Supabase
-   project — no need for a separate database for synthetic-only staging
-   data), a **new, real** `JWT_SECRET` (not the dev placeholder),
-   `COOKIE_SECURE=true`, `COOKIE_SAMESITE=none` (frontend and backend will
-   be on different domains — see `app/core/config.py` for why both of
-   these have to change together), and `CORS_ALLOWED_ORIGINS` (added after
-   step below, once the Vercel URL is known).
+Follow **`docs/delivery/staging.md`** step by step. In short:
 
-**Frontend (Vercel):**
-1. Import `matrisathi/jananisaathi`, root directory `apps/web`. Vite is
-   auto-detected.
-2. Environment variable `VITE_API_BASE` = `<backend URL from above>/api/v1`.
-   Vite bakes this in at **build** time, not read at runtime — set it
-   before the first deploy, or trigger a redeploy after adding it.
-
-**Then**: go back to the backend host and set `CORS_ALLOWED_ORIGINS` to
-the actual `*.vercel.app` URL Vercel assigned, and restart the backend
-(it's read once at process startup).
-
-**Label it as staging everywhere it's visible** — the login screen, any
-shared link — so nobody mistakes it for a production system. It still
-holds only synthetic data; nothing about this setup changes that.
+- Staging uses its **own** Supabase project, never the shared team
+  database.
+- Migrations run as a **separate release step** from a developer's
+  machine. The web service's start command is only
+  `uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+- With `ENV=staging`, the API refuses to start with the committed
+  `JWT_SECRET`, with `COOKIE_SECURE=false`, or with migrator credentials
+  in its environment; migration `0002` refuses the committed app-role
+  password; the seed script refuses the committed login password.
+- `/health` reports the environment label.
 
 ## Known, low-severity dev-only advisory
 
