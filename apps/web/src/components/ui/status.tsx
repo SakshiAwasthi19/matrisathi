@@ -1,16 +1,19 @@
-import { CheckCircle2, CircleDashed, Clock, HelpCircle, Info, TriangleAlert, type LucideIcon } from "lucide-react";
+import { CheckCircle2, CircleDashed, CircleDot, Clock, HelpCircle, Info, TriangleAlert, type LucideIcon } from "lucide-react";
 import type * as React from "react";
 import { cn } from "../../lib/utils";
 
 // Every status shows an icon plus a word; colour is never the only signal.
 // Red is reserved for Urgent help and is deliberately absent here.
-export type StatusKind = "pending" | "unknown" | "not-recorded" | "confirmed";
+// "attention" (e.g. a missed visit) is an administrative flag, not a clinical one.
+export type StatusKind = "pending" | "unknown" | "not-recorded" | "confirmed" | "neutral" | "attention";
 
 const STATUS_STYLE: Record<StatusKind, { icon: LucideIcon; className: string }> = {
   pending: { icon: Clock, className: "border-pending-line bg-pending-bg text-pending" },
   unknown: { icon: HelpCircle, className: "border-pending-line bg-pending-bg text-pending" },
   "not-recorded": { icon: CircleDashed, className: "border-none-line bg-none-bg text-none" },
   confirmed: { icon: CheckCircle2, className: "border-ok-line bg-ok-bg text-ok" },
+  neutral: { icon: CircleDot, className: "border-line bg-subtle text-ink" },
+  attention: { icon: TriangleAlert, className: "border-problem-line bg-problem-bg text-problem" },
 };
 
 export function StatusBadge({ kind, children }: { kind: StatusKind; children: React.ReactNode }) {

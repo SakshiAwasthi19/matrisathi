@@ -200,6 +200,175 @@ export interface PersonCreateInput {
   known_allergies_medicines?: string | null;
 }
 
+// --- Phase 1 care records (W2-A3) ---------------------------------------------
+
+export type DatingPrecision = "EXACT" | "APPROXIMATE";
+export type DatingEvidence = "SELF_REPORTED" | "CARD_OR_DOCUMENT" | "SCAN_REPORT" | "CLINICIAN_ASSESSMENT";
+
+export interface Dating {
+  id: string;
+  lmp_date: string | null;
+  edd: string | null;
+  precision: DatingPrecision;
+  evidence: DatingEvidence;
+  state: "PROVISIONAL" | "CONFIRMED";
+  recorded_by_name: string | null;
+  confirmed_by_name: string | null;
+  confirmed_at: string | null;
+  superseded_at: string | null;
+  created_at: string;
+  version: number;
+}
+
+export interface DatingHistory {
+  current: Dating | null;
+  history: Dating[];
+}
+
+export interface DatingInput {
+  lmp_date?: string | null;
+  edd?: string | null;
+  precision: DatingPrecision;
+  evidence: DatingEvidence;
+}
+
+export interface TemplateItem {
+  id: string;
+  position: number;
+  name: string;
+  kind: string;
+  timing_basis: string;
+  offset_days: number | null;
+  week_from: number | null;
+  week_to: number | null;
+  performer_role: string | null;
+  preparation_text: string | null;
+}
+
+export interface CarePlanTemplate {
+  id: string;
+  name: string;
+  version_label: string;
+  is_placeholder: boolean;
+  approved_by_name: string | null;
+  approved_on: string | null;
+  items: TemplateItem[];
+}
+
+export interface CarePlan {
+  id: string;
+  episode_id: string;
+  template: CarePlanTemplate;
+  status: string;
+  published_by_name: string | null;
+  published_at: string;
+  version: number;
+  unscheduled_item_names: string[];
+}
+
+export type AppointmentStatus = "REQUESTED" | "CONFIRMED" | "ATTENDED" | "MISSED" | "RESCHEDULED" | "CANCELLED";
+
+export interface Appointment {
+  id: string;
+  episode_id: string;
+  care_plan_id: string | null;
+  name: string | null;
+  status: AppointmentStatus;
+  requested_for: string | null;
+  confirmed_for: string | null;
+  location_note: string | null;
+  owner_staff_user_id: string | null;
+  previous_appointment_id: string | null;
+  status_reason: string | null;
+  version: number;
+}
+
+export type TaskStatus = "NEW" | "ASSIGNED" | "AWAITING_PATIENT" | "COMPLETED" | "CANCELLED";
+export type TaskOutcome = "DONE" | "DECLINED" | "UNREACHABLE" | "UNKNOWN" | "NOT_NEEDED";
+export type Barrier = "TRAVEL" | "COST" | "MEDICINE_ACCESS" | "CHILDCARE" | "WORK" | "FAMILY" | "OTHER";
+export type ClosureReason =
+  | "DONE_AS_PLANNED"
+  | "FAMILY_DECLINED"
+  | "COULD_NOT_REACH"
+  | "OUTCOME_UNKNOWN"
+  | "NO_LONGER_NEEDED"
+  | "DUPLICATE"
+  | "RECORDED_IN_ERROR";
+
+export interface CareTask {
+  id: string;
+  episode_id: string;
+  mother_full_name: string;
+  name: string | null;
+  kind: string;
+  status: TaskStatus;
+  owner_staff_user_id: string | null;
+  owner_name: string | null;
+  backup_staff_user_id: string | null;
+  due_at: string | null;
+  overdue: boolean;
+  source_appointment_id: string | null;
+  last_attempt_at: string | null;
+  barrier: string | null;
+  outcome: string | null;
+  closure_reason: string | null;
+  closed_at: string | null;
+  version: number;
+}
+
+const post = <T>(path: string, body: unknown) => request<T>(path, { method: "POST", body: JSON.stringify(body) });
+
+export const careApi = {
+  getDating: (episodeId: string) => request<DatingHistory>(`/pregnancy-episodes/${episodeId}/dating`),
+  recordDating: (episodeId: string, input: DatingInput) =>
+    post<Dating>(`/pregnancy-episodes/${episodeId}/dating`, input),
+  confirmDating: (episodeId: string, datingId: string, expectedVersion: number) =>
+    post<Dating>(`/pregnancy-episodes/${episodeId}/dating/confirm`, {
+      dating_id: datingId,
+      expected_version: expectedVersion,
+    }),
+  correctDating: (episodeId: string, input: DatingInput, expectedVersion: number) =>
+    post<Dating>(`/pregnancy-episodes/${episodeId}/dating/correct`, { ...input, expected_version: expectedVersion }),
+
+  listTemplates: () => request<CarePlanTemplate[]>("/care-plan-templates"),
+  getCarePlan: (episodeId: string) => request<CarePlan | null>(`/pregnancy-episodes/${episodeId}/care-plan`),
+  publishPlan: (episodeId: string, templateId: string) =>
+    post<CarePlan>(`/pregnancy-episodes/${episodeId}/care-plan`, { template_id: templateId }),
+
+  listAppointments: (episodeId: string) => request<Appointment[]>(`/pregnancy-episodes/${episodeId}/appointments`),
+  transitionAppointment: (
+    id: string,
+    body: {
+      to: "CONFIRMED" | "ATTENDED" | "MISSED" | "CANCELLED";
+      expected_version: number;
+      confirmed_for?: string;
+      location_note?: string | null;
+    },
+  ) => post<Appointment>(`/appointments/${id}/transition`, body),
+  rescheduleAppointment: (id: string, expectedVersion: number, requestedFor: string) =>
+    post<{ previous: Appointment; new: Appointment }>(`/appointments/${id}/reschedule`, {
+      expected_version: expectedVersion,
+      requested_for: requestedFor,
+    }),
+
+  listTasks: (mine: boolean) => request<CareTask[]>(`/tasks?mine=${mine}`),
+  listEpisodeTasks: (episodeId: string) => request<CareTask[]>(`/pregnancy-episodes/${episodeId}/tasks`),
+  assignTask: (id: string, expectedVersion: number, ownerId: string) =>
+    post<CareTask>(`/tasks/${id}/assign`, { expected_version: expectedVersion, owner_staff_user_id: ownerId }),
+  recordAttempt: (id: string, expectedVersion: number, awaitingPatient: boolean, barrier: Barrier | null) =>
+    post<CareTask>(`/tasks/${id}/attempt`, {
+      expected_version: expectedVersion,
+      awaiting_patient: awaitingPatient,
+      barrier,
+    }),
+  closeTask: (id: string, expectedVersion: number, outcome: TaskOutcome, closureReason: ClosureReason) =>
+    post<CareTask>(`/tasks/${id}/close`, {
+      expected_version: expectedVersion,
+      outcome,
+      closure_reason: closureReason,
+    }),
+};
+
 export const api = {
   login: (username: string, password: string) =>
     request<Staff>("/auth/login", { method: "POST", body: JSON.stringify({ username, password }) }),

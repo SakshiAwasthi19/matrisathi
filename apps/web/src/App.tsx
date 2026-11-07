@@ -11,6 +11,7 @@ import { queryClient } from "./lib/queryClient";
 import { Login } from "./pages/Login";
 import { MotherRegister } from "./pages/MotherRegister";
 import { PregnancyView } from "./pages/PregnancyView";
+import { Today } from "./pages/Today";
 import { SessionContext, useSession, type SessionState } from "./state/session";
 
 /** Old links used hash routing (#/episodes/<id>); send them to the real URL. */
@@ -107,7 +108,7 @@ function NotFound() {
         kind="not-found"
         action={
           <Button asChild variant="secondary">
-            <Link to="/">{t("common.backHome")}</Link>
+            <Link to="/mothers">{t("common.backHome")}</Link>
           </Button>
         }
       />
@@ -132,7 +133,8 @@ export function App() {
                 </RequireAuth>
               }
             >
-              <Route index element={<MotherRegister />} />
+              <Route index element={<Today />} />
+              <Route path="mothers" element={<MotherRegister />} />
               <Route path="episodes/:episodeId" element={<PregnancyView />} />
             </Route>
             <Route path="*" element={<NotFound />} />

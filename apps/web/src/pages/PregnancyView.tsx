@@ -11,6 +11,12 @@ import { Button } from "../components/ui/button";
 import { Card, Section } from "../components/ui/card";
 import { Alert, StatusBadge, type StatusKind } from "../components/ui/status";
 import { formatAge } from "../lib/age";
+import { isClinicianAt } from "../lib/roles";
+import { useSession } from "../state/session";
+import { AppointmentList } from "../components/care/AppointmentList";
+import { CarePlanPanel } from "../components/care/CarePlanPanel";
+import { DatingCard } from "../components/care/DatingCard";
+import { EpisodeTasks } from "../components/care/EpisodeTasks";
 
 const DATING_STATUS: Record<string, StatusKind> = {
   UNKNOWN: "unknown",
@@ -30,6 +36,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 export function PregnancyView() {
   const { t } = useTranslation();
   const { episodeId = "" } = useParams();
+  const { staff } = useSession();
   const queryClient = useQueryClient();
 
   // Always fetched from the API by the id in the URL, so a reload shows what
@@ -52,7 +59,7 @@ export function PregnancyView() {
 
   const backLink = (
     <Button asChild variant="ghost" className="-ml-2">
-      <Link to="/">
+      <Link to="/mothers">
         <ArrowLeft aria-hidden className="size-4" />
         {t("common.backHome")}
       </Link>
@@ -73,7 +80,7 @@ export function PregnancyView() {
               </Button>
             )}
             <Button asChild variant="secondary">
-              <Link to="/">{t("common.backHome")}</Link>
+              <Link to="/mothers">{t("common.backHome")}</Link>
             </Button>
           </div>
         }
@@ -82,6 +89,7 @@ export function PregnancyView() {
   }
 
   const e: PregnancyEpisode = episode.data;
+  const isClinician = isClinicianAt(staff?.memberships ?? [], e.facility_id);
   const datingKind = DATING_STATUS[e.dating_source] ?? "unknown";
   const datingLabel = t(`episode.dating${e.dating_source}`, { defaultValue: e.dating_source });
   const statusLabel = t(`episode.status${e.status}`, { defaultValue: e.status });
@@ -190,6 +198,16 @@ export function PregnancyView() {
             )}
           </Section>
         </Card>
+      </div>
+      {/* Phase 1 care records (W2-B1). Doctor-only controls are hidden from
+          other roles; the server refuses them regardless. */}
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <DatingCard episodeId={e.id} isClinician={isClinician} />
+        <CarePlanPanel episodeId={e.id} isClinician={isClinician} />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <AppointmentList episodeId={e.id} />
+        <EpisodeTasks episodeId={e.id} />
       </div>
       <p className="text-sm text-muted">{t("episode.reloadNote")}</p>
     </div>

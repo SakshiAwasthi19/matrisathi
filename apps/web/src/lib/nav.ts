@@ -14,7 +14,10 @@ export interface NavItem {
 
 // Every role currently sees the same pages: role capabilities start in SG2
 // (D04 section 9). New screens add their own role lists here.
-export const NAV_ITEMS: readonly NavItem[] = [{ labelKey: "nav.mothers", to: "/", roles: ALL_ROLES }];
+export const NAV_ITEMS: readonly NavItem[] = [
+  { labelKey: "nav.today", to: "/", roles: ALL_ROLES },
+  { labelKey: "nav.mothers", to: "/mothers", roles: ALL_ROLES },
+];
 
 export function rolesOf(memberships: readonly Membership[]): Set<string> {
   return new Set(memberships.map((m) => m.role));
