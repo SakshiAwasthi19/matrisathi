@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ClipboardList, Phone, UserRound } from "lucide-react";
+import { ArrowLeft, ClipboardList, Footprints, Phone, PhoneCall, UserRound } from "lucide-react";
 import type * as React from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
@@ -16,6 +16,7 @@ import { useSession } from "../state/session";
 import { AppointmentList } from "../components/care/AppointmentList";
 import { CarePlanPanel } from "../components/care/CarePlanPanel";
 import { DatingCard } from "../components/care/DatingCard";
+import { BirthPlanPanel } from "../components/care/BirthPlanPanel";
 import { EpisodeTasks } from "../components/care/EpisodeTasks";
 import { ObservationsPanel } from "../components/records/ObservationsPanel";
 import { PrescriptionsPanel } from "../components/records/PrescriptionsPanel";
@@ -213,6 +214,23 @@ export function PregnancyView() {
         <AppointmentList episodeId={e.id} />
         <EpisodeTasks episodeId={e.id} />
       </div>
+      {/* Next step and birth plan (W2-B3). */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <Button asChild>
+          <Link to={`/episodes/${e.id}/next-step`}>
+            <Footprints aria-hidden className="size-4" />
+            {t("next.open")}
+          </Link>
+        </Button>
+        <Button asChild variant="secondary">
+          <a href={`/urgent-help/${e.facility_id}`} target="_blank" rel="noopener noreferrer">
+            <PhoneCall aria-hidden className="size-4" />
+            {t("next.urgentLink")}
+          </a>
+        </Button>
+      </div>
+      <BirthPlanPanel episodeId={e.id} facilityId={e.facility_id} isClinician={isClinician} />
+
       {/* Phase 1 records (W2-B2). */}
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <ReportsPanel episodeId={e.id} personId={e.mother_person_id} isClinician={isClinician} />
