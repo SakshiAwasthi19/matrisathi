@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Clock, MapPin, MessageSquareOff, Navigation, Phone, PhoneCall, TriangleAlert } from "lucide-react";
+import { BadgeCheck, Clock, Info, MapPin, MessageSquareOff, MoonStar, Navigation, Phone, PhoneCall, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 import { nextStepApi } from "../api/client";
@@ -8,7 +8,8 @@ import { telHref } from "../lib/urgent";
 
 /** Public, signed-out page (F014). The only screen that uses red.
  * No location request, no login, no instructions until the doctor
- * approves the wording (D05): verified phone numbers only. */
+ * approves the wording (D05): verified phone numbers only. Approved
+ * wording is shown exactly as the server returns it, never rewritten. */
 export function UrgentHelp() {
   const { t } = useTranslation();
   const { facilityId } = useParams();
@@ -18,16 +19,27 @@ export function UrgentHelp() {
     enabled: !!facilityId,
     retry: 2,
   });
+  const wording = help.data?.wording_approved ? (help.data.wording ?? null) : null;
 
   return (
     <main className="mx-auto max-w-xl px-4 py-6">
       <div className="rounded-2xl bg-urgent px-5 py-6 text-urgent-ink shadow-raised">
         <h1 className="flex items-center gap-3 text-3xl font-semibold">
           <PhoneCall aria-hidden className="size-8 shrink-0" />
-          {t("urgent.callNow")}
+          {wording ? wording.heading : t("urgent.callNow")}
         </h1>
         {help.data && <p className="mt-2 text-lg">{help.data.facility_name}</p>}
       </div>
+
+      {wording && (
+        <section className="mt-5 space-y-3 rounded-xl border border-line bg-surface p-4 text-lg shadow-card">
+          <p className="whitespace-pre-line">{wording.instruction_text}</p>
+          <p className="flex items-start gap-2 whitespace-pre-line">
+            <Info aria-hidden className="mt-1 size-5 shrink-0" />
+            <span>{wording.when_to_call_text}</span>
+          </p>
+        </section>
+      )}
 
       <div className="mt-5 space-y-4">
         {!facilityId && <p className="rounded-xl border border-line bg-surface p-4 text-lg">{t("urgent.noFacility")}</p>}
@@ -66,7 +78,7 @@ export function UrgentHelp() {
         <div className="space-y-3 rounded-xl border border-line bg-surface p-4 text-base">
           <p className="flex items-start gap-2">
             <MessageSquareOff aria-hidden className="mt-0.5 size-5 shrink-0" />
-            <strong>{t("urgent.noMonitoring")}</strong>
+            <strong>{wording ? wording.not_monitored_text : t("urgent.noMonitoring")}</strong>
           </p>
           <p className="flex items-start gap-2">
             <Clock aria-hidden className="mt-0.5 size-5 shrink-0" />
@@ -74,13 +86,28 @@ export function UrgentHelp() {
               {t("urgent.hours")}: {help.data?.support_hours ?? t("urgent.hoursNotSet")}
             </span>
           </p>
+          {wording?.outside_hours_text && (
+            <p className="flex items-start gap-2">
+              <MoonStar aria-hidden className="mt-0.5 size-5 shrink-0" />
+              <span className="whitespace-pre-line">{wording.outside_hours_text}</span>
+            </p>
+          )}
           <p className="flex items-start gap-2 text-muted">
             <Navigation aria-hidden className="mt-0.5 size-5 shrink-0" />
             {t("urgent.noLocation")}
           </p>
         </div>
 
-        {help.data && !help.data.wording_approved && (
+        {wording && (
+          <p className="flex items-start gap-2 text-sm text-muted">
+            <BadgeCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
+            {wording.approved_by_role
+              ? t("urgent.approvedBy", { name: wording.approved_by_name, role: wording.approved_by_role, date: formatDate(wording.approved_on), version: wording.version_label })
+              : t("urgent.approvedByNoRole", { name: wording.approved_by_name, date: formatDate(wording.approved_on), version: wording.version_label })}
+          </p>
+        )}
+
+        {help.data && !wording && (
           <p className="flex items-start gap-2 rounded-xl border border-pending-line bg-pending-bg p-4 text-base text-pending">
             <TriangleAlert aria-hidden className="mt-0.5 size-5 shrink-0" />
             {t("urgent.wordingPending")}

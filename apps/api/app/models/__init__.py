@@ -10,12 +10,22 @@ from app.models.care import (
     Investigation,
 )
 from app.models.caregiver import CaregiverGrant
+from app.models.content import UrgentHelpContent
 from app.models.dating import EpisodeDating
 from app.models.facility import Facility
 from app.models.files import FileObject
 from app.models.identity import ContactMethod, Person
 from app.models.idempotency import IdempotencyKey
 from app.models.organization import Organization, OrganizationAdmin
+from app.models.messaging import (
+    ContactPreference,
+    InboundEvent,
+    InboundMedia,
+    InboxItem,
+    MessageTemplate,
+    MessagingChannel,
+    OutboxMessage,
+)
 from app.models.pregnancy import PregnancyEpisode
 from app.models.records import LocalContact, Observation, Prescription, Referral
 from app.models.staff import LoginAttempt, RefreshToken, StaffMembership, StaffUser
@@ -48,4 +58,12 @@ __all__ = [
     "LocalContact",
     "Referral",
     "BirthPlan",
+    "UrgentHelpContent",
+    "MessagingChannel",
+    "MessageTemplate",
+    "ContactPreference",
+    "OutboxMessage",
+    "InboundEvent",
+    "InboxItem",
+    "InboundMedia",
 ]

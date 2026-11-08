@@ -44,6 +44,15 @@ EXPECTED: dict[str, set[str]] = {
     "refresh_token": RW,
     "staff_membership": RW,
     "staff_user": RW,
+    # D05 and SG3: approved content is loaded by script, never edited by the app
+    "urgent_help_content": READ_ONLY,
+    "messaging_channel": READ_ONLY,
+    "message_template": READ_ONLY,
+    "contact_preference": NO_DELETE,
+    "outbox_message": NO_DELETE,  # status changes are kept; never deleted
+    "inbound_event": APPEND_ONLY,  # dedupe record
+    "inbox_item": NO_DELETE,
+    "inbound_media": INSERT_ONLY,
 }
 
 

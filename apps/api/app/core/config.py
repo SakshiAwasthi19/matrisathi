@@ -70,6 +70,28 @@ class Settings(BaseSettings):
     # patient/caregiver access check answers "no", whatever grants exist.
     patient_access_enabled: bool = False
 
+    # WhatsApp messaging (SG3). "disabled" sends nothing and the webhook
+    # refuses every request. "meta" uses the WhatsApp Cloud API (D06's
+    # recommendation; D06 is not decided yet, so this is the sandbox build).
+    # The secrets are set only in the environment, never in a file in git.
+    messaging_provider: str = "disabled"
+    whatsapp_api_base: str = "https://graph.facebook.com/v21.0"
+    whatsapp_access_token: str | None = None
+    # Signs every webhook POST (X-Hub-Signature-256); unsigned ones are rejected.
+    whatsapp_app_secret: str | None = None
+    # Echoed back once when the webhook is registered in Meta's dashboard.
+    whatsapp_verify_token: str | None = None
+    # Numbers stored without a country code are sent with this one.
+    messaging_default_country_code: str = "91"
+    # Default local hours [from, to) for sending, when a person has no preference.
+    messaging_default_safe_from_hour: int = 8
+    messaging_default_safe_to_hour: int = 20
+    messaging_max_attempts: int = 5
+    # Placeholder templates may be sent only to consenting staff test phones.
+    messaging_allow_placeholder_templates: bool = False
+    # How long staff have to pick up a new inbox item (administrative, not clinical).
+    inbox_response_hours: int = 24
+
     login_throttle_max_attempts: int = 5
     login_throttle_window_minutes: int = 15
 

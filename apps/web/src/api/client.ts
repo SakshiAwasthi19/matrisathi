@@ -127,7 +127,7 @@ function refreshSession(): Promise<boolean> {
   return refreshInFlight;
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function sendAuthed(path: string, options: RequestOptions): Promise<Response> {
   let res = await send(path, options);
 
   if (res.status === 401 && !NO_REFRESH_PATHS.has(path)) {
@@ -139,6 +139,22 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     }
     if (res.status === 401) onSessionExpired?.();
   }
+  return res;
+}
+
+/** A stored file's bytes (voice note, photo), fetched with the session
+ * cookie. Callers show it through an object URL and revoke it afterwards. */
+async function requestBlob(path: string): Promise<Blob> {
+  const res = await sendAuthed(path, { headers: { Accept: "*/*" } });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new ApiError(res.status, detailMessage(body.detail, res.status), body.detail);
+  }
+  return res.blob();
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const res = await sendAuthed(path, options);
 
   if (res.status === 204) {
     return undefined as T;
@@ -647,11 +663,25 @@ export interface BirthPlanInput {
   alternate_contact_id: string | null;
 }
 
+/** Doctor-approved urgent-help wording (D05). Shown exactly as approved. */
+export interface UrgentHelpWording {
+  heading: string;
+  instruction_text: string;
+  when_to_call_text: string;
+  not_monitored_text: string;
+  outside_hours_text: string | null;
+  version_label: string;
+  approved_by_name: string;
+  approved_by_role: string | null;
+  approved_on: string;
+}
+
 export interface UrgentHelp {
   facility_name: string;
   contacts: HelpContact[];
   support_hours: string | null;
   wording_approved: boolean;
+  wording?: UrgentHelpWording | null;
 }
 
 export const nextStepApi = {
@@ -874,4 +904,161 @@ export const workApi = {
     facilityId: string,
     body: { from_staff_user_id: string; to_staff_user_id: string; reason: HandoverReason; include_backup: boolean },
   ) => post<{ owner_moved: number; backup_moved: number }>(`/facilities/${facilityId}/handover`, body),
+};
+
+// --- WhatsApp messaging and the staff inbox (W3-A2..A4, W3-B1, W3-B2) -------------
+
+export type OutboxStatus = "QUEUED" | "SENDING" | "SUBMITTED" | "DELIVERED" | "READ" | "FAILED" | "UNKNOWN" | "BLOCKED";
+export type MessagePurpose = "APPOINTMENT_REMINDER" | "FOLLOW_UP" | "GENERAL";
+export type DetailLevel = "MINIMAL" | "STANDARD";
+export type OptOutSource = "STAFF" | "INBOUND_KEYWORD";
+
+export interface ContactPreference {
+  person_id: string;
+  exists: boolean;
+  language: string | null;
+  safe_from_hour: number | null;
+  safe_to_hour: number | null;
+  default_safe_from_hour: number;
+  default_safe_to_hour: number;
+  detail_level: DetailLevel;
+  messaging_consent: boolean;
+  consent_recorded_at: string | null;
+  consent_recorded_by_name: string | null;
+  opted_out: boolean;
+  opted_out_at: string | null;
+  opt_out_source: OptOutSource | null;
+  prefers_call: boolean;
+  version: number;
+  phone_numbers: string[];
+  messaging_available: boolean;
+}
+
+export interface ContactPreferenceInput {
+  expected_version: number;
+  language: string | null;
+  safe_from_hour: number | null;
+  safe_to_hour: number | null;
+  detail_level: DetailLevel;
+  messaging_consent: boolean;
+  opted_out: boolean;
+  prefers_call: boolean;
+}
+
+export interface OutboxMessage {
+  id: string;
+  person_id: string;
+  kind: "TEMPLATE" | "TEXT";
+  purpose: MessagePurpose;
+  status: OutboxStatus;
+  status_reason: string | null;
+  /** What was (or will be) sent, as staff should read it. */
+  text: string;
+  audio_available: boolean;
+  template_placeholder: boolean;
+  appointment_id: string | null;
+  inbox_item_id: string | null;
+  attempts: number;
+  next_attempt_at: string;
+  submitted_at: string | null;
+  delivered_at: string | null;
+  read_at: string | null;
+  failed_at: string | null;
+  created_at: string;
+  created_by_name: string | null;
+  owner_name: string | null;
+  resolved_at: string | null;
+  person_name?: string | null;
+}
+
+export interface MessageTemplate {
+  id: string;
+  purpose: MessagePurpose;
+  language: string;
+  detail_level: DetailLevel;
+  version_label: string;
+  body_text: string;
+  variable_names: string[];
+  is_placeholder: boolean;
+  approved_by_name: string | null;
+  audio_available: boolean;
+}
+
+export type InboxKind = "TEXT" | "VOICE" | "IMAGE" | "OTHER";
+export type MediaState = "NONE" | "PENDING" | "STORED" | "REJECTED" | "FAILED";
+export type IdentityCheck = "CALLED_BACK" | "ASKED_IDENTIFYING_DETAILS" | "IN_PERSON";
+export type InboxOutcome = "RESPONDED" | "CALLED" | "NO_ACTION_NEEDED" | "NOT_FOR_US" | "OTHER";
+export type InboxView = "open" | "unlinked" | "mine" | "overdue" | "closed";
+
+export interface InboxItem {
+  id: string;
+  facility_id: string | null;
+  kind: InboxKind;
+  text_body: string | null;
+  media_state: MediaState;
+  media_note: string | null;
+  media_content_type: string | null;
+  received_at: string;
+  /** Never an identity: phones are shared and change hands. */
+  from_number: string;
+  people_on_number: number;
+  person_id: string | null;
+  person_name: string | null;
+  linked_by_name: string | null;
+  linked_at: string | null;
+  identity_check: IdentityCheck | null;
+  status: "OPEN" | "CLOSED";
+  owner_staff_user_id: string | null;
+  owner_name: string | null;
+  backup_staff_user_id: string | null;
+  backup_name: string | null;
+  due_at: string;
+  /** Administrative only: the team's follow-up target has passed. */
+  overdue: boolean;
+  outcome: InboxOutcome | null;
+  closure_note: string | null;
+  closed_at: string | null;
+  version: number;
+  replies: OutboxMessage[];
+  can_reply_free_text: boolean;
+}
+
+export interface InboxSummary {
+  open: number;
+  unlinked: number;
+  mine: number;
+  overdue: number;
+  failed_messages: number;
+}
+
+const put = <T>(path: string, body: unknown) => request<T>(path, { method: "PUT", body: JSON.stringify(body) });
+
+export const messagingApi = {
+  getPreferences: (personId: string) => request<ContactPreference>(`/people/${personId}/contact-preferences`),
+  savePreferences: (personId: string, body: ContactPreferenceInput) =>
+    put<ContactPreference>(`/people/${personId}/contact-preferences`, body),
+  templates: (facilityId: string) =>
+    request<MessageTemplate[]>(`/message-templates?facility_id=${encodeURIComponent(facilityId)}`),
+  queueReminder: (appointmentId: string, sendAt?: string) =>
+    post<OutboxMessage>(`/appointments/${appointmentId}/reminders`, sendAt ? { send_at: sendAt } : {}),
+  personMessages: (personId: string) => request<OutboxMessage[]>(`/people/${personId}/messages`),
+  failures: (facilityId: string) => request<OutboxMessage[]>(`/facilities/${facilityId}/message-failures`),
+  resolve: (messageId: string, note: string | null) => post<OutboxMessage>(`/messages/${messageId}/resolve`, { note }),
+  callInstead: (messageId: string) => post<OutboxMessage>(`/messages/${messageId}/call-instead`, {}),
+};
+
+type ReplyBody = { expected_version: number; text: string } | { expected_version: number; template_purpose: "FOLLOW_UP" };
+
+export const inboxApi = {
+  list: (facilityId: string, view: InboxView) => request<InboxItem[]>(`/facilities/${facilityId}/inbox?view=${view}`),
+  summary: (facilityId: string) => request<InboxSummary>(`/facilities/${facilityId}/inbox-summary`),
+  get: (itemId: string) => request<InboxItem>(`/inbox/${itemId}`),
+  media: (itemId: string) => requestBlob(`/inbox/${itemId}/media`),
+  link: (itemId: string, body: { expected_version: number; person_id: string; identity_check: IdentityCheck }) =>
+    post<InboxItem>(`/inbox/${itemId}/link`, body),
+  assign: (itemId: string, body: { expected_version: number; owner_staff_user_id: string; backup_staff_user_id: string | null }) =>
+    post<InboxItem>(`/inbox/${itemId}/assign`, body),
+  reply: (itemId: string, body: ReplyBody) => post<InboxItem>(`/inbox/${itemId}/reply`, body),
+  close: (itemId: string, body: { expected_version: number; outcome: InboxOutcome; note: string | null }) =>
+    post<InboxItem>(`/inbox/${itemId}/close`, body),
 };

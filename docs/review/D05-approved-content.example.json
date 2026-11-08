@@ -1,0 +1,48 @@
+{
+  "_read_me": "Copy this file, fill in every <...> from the doctor's signed D05 packet word for word, delete sections not approved yet, then run: uv run python -m app.scripts.load_approved_content <your-file>.json (dry run) and add --apply to write. Never invent clinical content. Keep filled copies out of git if they contain anything other than approved wording.",
+  "organization_name": "<organization name exactly as in the app>",
+  "approval": {
+    "approved_by_name": "<doctor's name>",
+    "approved_by_role": "<role, e.g. Medical Officer>",
+    "approved_on": "<YYYY-MM-DD>"
+  },
+  "care_plan_template": {
+    "name": "<template name staff will see (packet section 1)>",
+    "version": "<version>",
+    "source_reference": "<guideline name and year>",
+    "effective_from": "<YYYY-MM-DD>",
+    "items": [
+      {
+        "name": "<item name (section 2)>",
+        "kind": "VISIT | TEST_REQUEST | FOLLOW_UP",
+        "timing_basis": "AT_PUBLISH | DAYS_AFTER_PUBLISH | GESTATIONAL_WEEKS",
+        "offset_days": null,
+        "week_from": null,
+        "week_to": null,
+        "performer_role": "DOCTOR | NURSE | ANM | ASHA | COORDINATOR | null",
+        "preparation_text": "<preparation message for the mother>"
+      }
+    ]
+  },
+  "urgent_help": {
+    "version": "<version>",
+    "heading": "<heading (section 4)>",
+    "instruction_text": "<what to do now, 2-4 plain sentences>",
+    "when_to_call_text": "<when to call, in the doctor's words>",
+    "not_monitored_text": "<sentence: messages are not monitored for emergencies>",
+    "support_hours_text": "<support hours of the team>",
+    "outside_hours_text": "<what to do outside those hours>",
+    "effective_from": "<YYYY-MM-DD>"
+  },
+  "message_templates": [
+    {
+      "purpose": "APPOINTMENT_REMINDER | FOLLOW_UP | GENERAL",
+      "language": "<language code, e.g. en, hi>",
+      "detail_level": "MINIMAL | STANDARD",
+      "version": "<version>",
+      "provider_template_name": "<name approved in the WhatsApp dashboard, lowercase_with_underscores>",
+      "body_text": "<exact approved text with {{1}}, {{2}} slots>",
+      "variable_names": ["facility_name", "appointment_date"]
+    }
+  ]
+}

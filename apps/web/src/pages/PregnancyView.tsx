@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   EyeOff,
   HeartHandshake,
+  MessageCircle,
   NotebookTabs,
   Phone,
   PhoneCall,
@@ -24,6 +25,7 @@ import { CarePlanPanel } from "../components/care/CarePlanPanel";
 import { DatingCard } from "../components/care/DatingCard";
 import { EpisodeTasks } from "../components/care/EpisodeTasks";
 import { FamilyAccessPanel } from "../components/care/FamilyAccessPanel";
+import { ContactPreferencesPanel, MessageHistory } from "../components/messaging/ContactPreferencesPanel";
 import { errorStateKind, PageState } from "../components/PageState";
 import { ObservationsPanel } from "../components/records/ObservationsPanel";
 import { PrescriptionsPanel } from "../components/records/PrescriptionsPanel";
@@ -44,8 +46,8 @@ const DATING_STATUS: Record<string, StatusKind> = {
   CLINICIAN_CONFIRMED: "confirmed",
 };
 
-type RecordTab = "overview" | "care" | "records" | "birth" | "family";
-const TABS: RecordTab[] = ["overview", "care", "records", "birth", "family"];
+type RecordTab = "overview" | "care" | "records" | "birth" | "family" | "messages";
+const TABS: RecordTab[] = ["overview", "care", "records", "birth", "family", "messages"];
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -178,6 +180,7 @@ export function PregnancyView() {
     { value: "records", label: t("episode.tab.records"), icon: FileStack },
     { value: "birth", label: t("episode.tab.birth"), icon: NotebookTabs },
     { value: "family", label: t("episode.tab.family"), icon: HeartHandshake },
+    { value: "messages", label: t("episode.tab.messages"), icon: MessageCircle },
   ];
 
   return (
@@ -339,7 +342,7 @@ export function PregnancyView() {
 
         {tab === "care" && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
-            <AppointmentList episodeId={e.id} />
+            <AppointmentList episodeId={e.id} facilityId={e.facility_id} personId={e.mother_person_id} />
             <EpisodeTasks episodeId={e.id} />
           </div>
         )}
@@ -368,6 +371,15 @@ export function PregnancyView() {
             mother={mother.data}
             canManage={canAt(staff?.memberships ?? [], e.facility_id, "MANAGE_CAREGIVER_GRANTS")}
           />
+        )}
+        {tab === "messages" && (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+            <ContactPreferencesPanel
+              personId={e.mother_person_id}
+              canManage={canAt(staff?.memberships ?? [], e.facility_id, "MANAGE_CONTACT_PREFERENCES")}
+            />
+            <MessageHistory personId={e.mother_person_id} />
+          </div>
         )}
       </div>
 

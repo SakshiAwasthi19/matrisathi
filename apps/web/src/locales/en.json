@@ -14,7 +14,6 @@
     "today": "Today",
     "contacts": "Local contacts",
     "overview": "Overview",
-    "messages": "Messages",
     "children": "Children",
     "insights": "Insights",
     "previewTag": "Preview",
@@ -43,7 +42,10 @@
     "quickFindLabel": "Find a mother by phone number or name",
     "enterKey": "Enter",
     "workload": "Workload",
-    "admin": "Administration"
+    "admin": "Administration",
+    "inbox": "Inbox",
+    "openCount_one": "{{count}} open message",
+    "openCount_other": "{{count}} open messages"
   },
   "common": {
     "loading": "Loading…",
@@ -177,7 +179,8 @@
       "care": "Visits & tasks",
       "records": "Reports & records",
       "birth": "Birth plan",
-      "family": "Family access"
+      "family": "Family access",
+      "messages": "Messages"
     },
     "withheld": "Hidden for your role"
   },
@@ -564,7 +567,9 @@
     "hours": "Support team hours",
     "hoursNotSet": "Not yet confirmed by the facility.",
     "noMonitoring": "Messages to the support team are not watched for emergencies. In an emergency, call.",
-    "noLocation": "This page does not use your location."
+    "noLocation": "This page does not use your location.",
+    "approvedBy": "Wording approved by {{name}} ({{role}}) on {{date}} · version {{version}}",
+    "approvedByNoRole": "Wording approved by {{name}} on {{date}} · version {{version}}"
   },
   "toast": {
     "saved": "Saved",
@@ -729,22 +734,6 @@
     "principlesBody": "Decisions that protect mothers and the staff who care for them.",
     "ctaTitle": "Ready to start your shift?",
     "ctaBody": "Sign in with the account your administrator gave you."
-  },
-  "messages": {
-    "title": "Messages",
-    "description": "Family messages in one inbox, linked to the right mother's record.",
-    "notice": "Messaging is planned for a later phase. These conversations are invented examples; nothing is sent or received.",
-    "inbox_one": "Inbox · {{count}} conversation",
-    "inbox_other": "Inbox · {{count}} conversations",
-    "back": "Back to inbox",
-    "link": "Link to a mother",
-    "notAvailable": "Not available in the preview",
-    "composerDisabled": "Replying is not available in the preview.",
-    "status": {
-      "open": "Open",
-      "unlinked": "Not linked",
-      "closed": "Closed"
-    }
   },
   "children": {
     "title": "Children",
@@ -958,6 +947,235 @@
       "action": "Action",
       "record": "Record",
       "outcome": "Outcome"
+    }
+  },
+  "msg": {
+    "placeholderLabel": "SYNTHETIC PLACEHOLDER – NOT APPROVED",
+    "audioNotApproved": "Audio not yet approved",
+    "unknownPerson": "Name not available",
+    "system": "the system",
+    "queuedBy": "Queued {{time}} by {{name}}",
+    "submittedAt": "Sent to WhatsApp {{time}}",
+    "deliveredAt": "Delivered to the phone {{time}}",
+    "readAt": "Read {{time}} (reported by WhatsApp)",
+    "attempts_one": "{{count}} attempt",
+    "attempts_other": "{{count}} attempts",
+    "resolvedAt": "Resolved {{time}}",
+    "purpose": {
+      "APPOINTMENT_REMINDER": "Visit reminder",
+      "FOLLOW_UP": "Follow-up",
+      "GENERAL": "Message"
+    },
+    "status": {
+      "QUEUED": "Queued – not sent yet",
+      "WAITING_SAFE_HOURS": "Waiting for her safe hours",
+      "RETRYING": "Retrying",
+      "SENDING": "Sending",
+      "SUBMITTED": "Sent to WhatsApp",
+      "DELIVERED": "Delivered to the phone",
+      "READ": "Read",
+      "FAILED": "Failed – not sent",
+      "UNKNOWN": "Not confirmed – may not have been sent",
+      "BLOCKED": "Not sent"
+    },
+    "reason": {
+      "NO_CONSENT": "She has not agreed to WhatsApp messages yet.",
+      "OPTED_OUT": "She asked not to receive messages.",
+      "NUMBER_NOT_USABLE": "The phone number on record cannot receive WhatsApp messages.",
+      "CHANNEL_INACTIVE": "WhatsApp is switched off for this organization.",
+      "TEMPLATE_NOT_APPROVED": "The message wording is not approved for sending.",
+      "OUTSIDE_SERVICE_WINDOW": "More than 24 hours have passed since her last message, so only an approved template can be sent.",
+      "APPOINTMENT_CHANGED": "The visit changed after the reminder was queued, so it was not sent.",
+      "NO_ANSWER_FROM_PROVIDER": "WhatsApp did not answer, so we cannot tell whether it was sent.",
+      "RETRIES_USED_UP": "Sending was tried several times and did not work.",
+      "PROVIDER_REFUSED": "WhatsApp refused the message.",
+      "PROVIDER_REPORTED_FAILED": "WhatsApp reported that it could not deliver the message.",
+      "WORKER_STOPPED_MID_SEND": "Sending stopped part-way, so we cannot tell whether it was sent.",
+      "OTHER": "It was not sent. Call her instead if it matters."
+    },
+    "historyTitle": "Messages sent to her",
+    "historyDescription": "Newest first. A message only counts as received when it says delivered.",
+    "historyEmpty": "No messages have been queued for her yet.",
+    "sendReminder": "Send WhatsApp reminder",
+    "reminderSending": "Queuing…",
+    "reminderQueued": "Reminder queued",
+    "reminderRefused": "Reminder not queued",
+    "failuresTitle": "Messages that need follow-up",
+    "failuresDescription": "Failed, unconfirmed and blocked messages stay here until someone deals with them.",
+    "failuresEmpty": "Nothing needs follow-up.",
+    "callInstead": "Call instead",
+    "callTaskCreated": "Call task created. It is on Today.",
+    "markResolved": "Mark resolved",
+    "resolvedToast": "Marked resolved",
+    "resolveNoteLabel": "Note (optional)",
+    "resolveNoteHint": "For example: called her and gave the visit date."
+  },
+  "prefs": {
+    "title": "Contact preferences",
+    "description": "How and when the team may send her WhatsApp messages.",
+    "notSetUpTitle": "WhatsApp is not set up",
+    "notSetUpBody": "WhatsApp is not set up for this organization yet (waiting on D06). You can still record her choices.",
+    "readOnlyTitle": "View only",
+    "readOnlyBody": "Your role cannot change contact preferences.",
+    "numbers": "Numbers on record: {{numbers}}",
+    "noNumbers": "No phone number on record.",
+    "consentLabel": "She agreed to receive WhatsApp messages",
+    "consentHint": "Tick this only after you have asked her yourself, in person or on a call.",
+    "consentRecorded": "Recorded by {{name}} on {{time}}",
+    "consentNotRecorded": "Not recorded",
+    "optOutLabel": "She asked not to receive messages",
+    "optOutHint": "Nothing is sent while this is on, even if she agreed earlier.",
+    "optOutByStaff": "Recorded by staff on {{time}}",
+    "optOutByStop": "She sent STOP from her number on {{time}}",
+    "languageLabel": "Message language",
+    "languageNotSet": "Not set",
+    "language": {
+      "en": "English",
+      "hi": "Hindi"
+    },
+    "fromLabel": "Safe to message from",
+    "toLabel": "Safe to message until",
+    "defaultHour": "Default ({{time}})",
+    "hoursHint": "Messages wait until these hours. Leave both on default unless she asks.",
+    "hoursInvalid": "Choose both safe hours, with the start before the end, or leave both on default.",
+    "detailLabel": "How much the message says",
+    "detail": {
+      "MINIMAL": "Minimal",
+      "STANDARD": "Standard"
+    },
+    "detailHint": {
+      "MINIMAL": "Nothing about pregnancy or care – for shared phones.",
+      "STANDARD": "May mention her visit by name."
+    },
+    "prefersCallLabel": "Prefers a phone call",
+    "prefersCallHint": "The team should call her rather than rely on messages.",
+    "save": "Save preferences",
+    "saving": "Saving…",
+    "saved": "Contact preferences saved"
+  },
+  "inbox": {
+    "title": "Inbox",
+    "description": "WhatsApp messages, voice notes and photos sent to the team.",
+    "notMonitored": "This inbox is not watched for emergencies. Anyone in an emergency must call; the urgent-help page lists the numbers.",
+    "back": "Back to inbox",
+    "viewsLabel": "Inbox views",
+    "view": {
+      "open": "Open",
+      "unlinked": "Unlinked",
+      "mine": "Mine",
+      "overdue": "Overdue",
+      "closed": "Closed"
+    },
+    "tile": {
+      "open": "Open",
+      "unlinked": "Unlinked",
+      "mine": "Owned by me",
+      "overdue": "Past follow-up time",
+      "failed": "Messages to follow up"
+    },
+    "overdueHint": "Team follow-up target only",
+    "empty": {
+      "open": "No open messages.",
+      "unlinked": "No unlinked messages.",
+      "mine": "No open messages are yours.",
+      "overdue": "Nothing is past its follow-up time.",
+      "closed": "No closed messages yet."
+    },
+    "kind": {
+      "TEXT": "Text",
+      "VOICE": "Voice note",
+      "IMAGE": "Photo",
+      "OTHER": "File"
+    },
+    "unlinkedName": "Unlinked – not confirmed who wrote",
+    "receivedAt": "Received {{time}}",
+    "dueBy": "Follow up by {{time}}",
+    "overdueSince": "Follow-up overdue since {{time}}",
+    "closedWith": "Closed: {{outcome}}",
+    "ownerIs": "Owner: {{name}}",
+    "noOwner": "No owner yet",
+    "noText": "No text in this message.",
+    "media": {
+      "pending": "Fetching the file…",
+      "loading": "Loading the file…",
+      "loadFailed": "The file could not be loaded. Try again later.",
+      "REJECTED": "File not kept",
+      "FAILED": "File could not be fetched",
+      "noAudioSupport": "This browser cannot play the voice note.",
+      "imageAlt": "Photo sent with the message",
+      "open": "Open the file"
+    },
+    "who": {
+      "linkedTitle": "Linked to",
+      "openRecord": "Open her record",
+      "linkedBy": "Linked by {{name}} on {{time}} · how it was checked: {{check}}",
+      "fromNumber": "Sent from {{number}}",
+      "unlinkedTitle": "Not confirmed who wrote",
+      "notIdentityTitle": "A phone number is not an identity",
+      "notIdentityBody": "Phones are shared and change hands. Do not assume who wrote from the number. Check who she is before linking or sharing anything.",
+      "peopleOnNumber_one": "{{count}} person is registered on this number",
+      "peopleOnNumber_other": "{{count}} people are registered on this number",
+      "nobodyOnNumber": "Nobody is registered on this number.",
+      "onlyCoordinator": "Only a coordinator can link this message to a person."
+    },
+    "link": {
+      "button": "Link to a person",
+      "findLabel": "Find the person",
+      "findHint": "Search by name or phone number.",
+      "noMatch": "No one matched. Check the spelling or try the number.",
+      "checkLabel": "How did you check who she is?",
+      "confirm": "Link to {{name}}",
+      "audited": "Linking is recorded with your name and how you checked."
+    },
+    "linkedToast": "Linked to {{name}}",
+    "check": {
+      "CALLED_BACK": "Called her back on a number on record",
+      "ASKED_IDENTIFYING_DETAILS": "Asked identifying details",
+      "IN_PERSON": "In person"
+    },
+    "assign": {
+      "title": "Who is following up",
+      "owner": "Owner",
+      "backup": "Backup",
+      "noBackup": "No backup",
+      "choose": "Choose someone",
+      "change": "Change",
+      "save": "Save",
+      "saved": "Owner updated",
+      "coordinatorsOnly": "Until it is linked, only a coordinator can own this message."
+    },
+    "reply": {
+      "title": "Replies",
+      "none": "No replies yet.",
+      "linkFirst": "Link this message to a person before replying.",
+      "cannotSend": "Your role cannot send messages.",
+      "textLabel": "Your reply",
+      "textHint": "Plain words only. Do not give medical advice in a message; call her instead.",
+      "send": "Send reply",
+      "windowTitle": "Only an approved template can be sent now",
+      "windowBody": "WhatsApp allows your own words only within 24 hours of her last message. After that, only an approved template can be sent.",
+      "noTemplate": "There is no approved follow-up template yet. Call her instead.",
+      "templatePreview": "Approved follow-up template · {{version}} · {{language}}",
+      "sendTemplate": "Send approved follow-up template",
+      "queued": "Reply queued"
+    },
+    "close": {
+      "title": "Close",
+      "description": "Close once the message has been dealt with.",
+      "button": "Close message",
+      "confirm": "Close message",
+      "outcomeLabel": "What happened",
+      "noteLabel": "Note (optional)",
+      "closedToast": "Message closed",
+      "closedTitle": "Closed",
+      "closedAt": "Closed {{time}}"
+    },
+    "outcome": {
+      "RESPONDED": "Replied",
+      "CALLED": "Called her",
+      "NO_ACTION_NEEDED": "No action needed",
+      "NOT_FOR_US": "Not for this team",
+      "OTHER": "Other"
     }
   }
 }

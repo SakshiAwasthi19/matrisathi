@@ -22,7 +22,8 @@ import { SessionContext, useSession, type SessionState } from "./state/session";
 
 // Rarely-visited screens load on demand to keep the first download small on phones.
 const Landing = lazy(() => import("./pages/Landing").then((m) => ({ default: m.Landing })));
-const Messages = lazy(() => import("./pages/preview/Messages").then((m) => ({ default: m.Messages })));
+const Inbox = lazy(() => import("./pages/Inbox").then((m) => ({ default: m.Inbox })));
+const InboxItemPage = lazy(() => import("./pages/InboxItem").then((m) => ({ default: m.InboxItemPage })));
 const Children = lazy(() => import("./pages/preview/Children").then((m) => ({ default: m.Children })));
 const Insights = lazy(() => import("./pages/preview/Insights").then((m) => ({ default: m.Insights })));
 const Admin = lazy(() => import("./pages/admin/Admin").then((m) => ({ default: m.Admin })));
@@ -176,13 +177,16 @@ export function App() {
                       <Route index element={<HomeRoute />} />
                       <Route path="today" element={<Today />} />
                       <Route path="workload" element={<Lazy><Workload /></Lazy>} />
+                      <Route path="inbox" element={<Lazy><Inbox /></Lazy>} />
+                      <Route path="inbox/:itemId" element={<Lazy><InboxItemPage /></Lazy>} />
+                      {/* The old sample-data preview address now opens the real inbox. */}
+                      <Route path="messages" element={<Navigate to="/inbox" replace />} />
                       <Route path="admin" element={<Lazy><Admin /></Lazy>} />
                       <Route path="mothers" element={<MotherRegister />} />
                       <Route path="contacts" element={<LocalContacts />} />
                       <Route path="episodes/:episodeId" element={<PregnancyView />} />
                       <Route path="episodes/:episodeId/next-step" element={<NextStep />} />
                       {/* Previews on sample data; each screen is labelled as such. */}
-                      <Route path="messages" element={<Lazy><Messages /></Lazy>} />
                       <Route path="children" element={<Lazy><Children /></Lazy>} />
                       <Route path="insights" element={<Lazy><Insights /></Lazy>} />
                     </Route>

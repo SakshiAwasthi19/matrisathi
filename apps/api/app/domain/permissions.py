@@ -32,6 +32,12 @@ class Capability(str, enum.Enum):
     VIEW_REPORTED_HISTORY = "VIEW_REPORTED_HISTORY"  # reported history and allergies (M008 Q12)
     MANAGE_CAREGIVER_GRANTS = "MANAGE_CAREGIVER_GRANTS"  # record and revoke family access (F015)
     HAND_OVER_WORK = "HAND_OVER_WORK"  # move an unavailable person's open work (F008, F038)
+    # --- messaging (SG3) ---
+    SEND_MESSAGES = "SEND_MESSAGES"  # queue reminders, reply to linked inbox items (F017, F018)
+    MANAGE_CONTACT_PREFERENCES = "MANAGE_CONTACT_PREFERENCES"  # consent, opt-out, language, hours (F016, F020)
+    # The unlinked queue shows messages from numbers nobody has confirmed yet,
+    # so only coordinators see it and link items after an identity check (M018).
+    TRIAGE_UNLINKED_INBOX = "TRIAGE_UNLINKED_INBOX"
 
 
 CLINICAL: frozenset[Capability] = frozenset(
@@ -45,7 +51,8 @@ CLINICAL: frozenset[Capability] = frozenset(
         Capability.CHOOSE_REFERRAL_SITE,
     }
 )
-EVERYDAY: frozenset[Capability] = frozenset(Capability) - CLINICAL
+COORDINATION: frozenset[Capability] = frozenset({Capability.TRIAGE_UNLINKED_INBOX})
+EVERYDAY: frozenset[Capability] = frozenset(Capability) - CLINICAL - COORDINATION
 
 # Role -> capabilities. ANM starts identical to NURSE until the doctor answers
 # M008 question 9; ASHA keeps every everyday capability until questions 11-12.
@@ -53,7 +60,7 @@ ROLE_CAPABILITIES: Mapping[str, frozenset[Capability]] = {
     "DOCTOR": CLINICAL | EVERYDAY,
     "NURSE": EVERYDAY,
     "ANM": EVERYDAY,
-    "COORDINATOR": EVERYDAY,
+    "COORDINATOR": EVERYDAY | COORDINATION,
     "ASHA": EVERYDAY,
 }
 
@@ -66,6 +73,9 @@ DENIED_MESSAGE: Mapping[Capability, str] = {
     Capability.VIEW_REPORTED_HISTORY: "Your role cannot see reported history.",
     Capability.MANAGE_CAREGIVER_GRANTS: "Your role cannot change family access.",
     Capability.HAND_OVER_WORK: "Your role cannot hand over other people's work.",
+    Capability.SEND_MESSAGES: "Your role cannot send messages.",
+    Capability.MANAGE_CONTACT_PREFERENCES: "Your role cannot change contact preferences.",
+    Capability.TRIAGE_UNLINKED_INBOX: "Only a coordinator can see and link messages from unconfirmed numbers.",
 }
 
 

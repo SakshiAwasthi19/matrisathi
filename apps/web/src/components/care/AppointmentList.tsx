@@ -1,9 +1,11 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { CalendarDays, MapPin } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BellRing, CalendarDays, MapPin } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { careApi, type Appointment, type AppointmentStatus } from "../../api/client";
+import { ApiError, careApi, messagingApi, type Appointment, type AppointmentStatus } from "../../api/client";
 import { formatDate, formatDateTime, todayIso } from "../../lib/format";
+import { canAt } from "../../lib/roles";
+import { useSession } from "../../state/session";
 import { errorStateKind, PageState } from "../PageState";
 import { Button } from "../ui/button";
 import { Card, Section } from "../ui/card";
@@ -22,7 +24,37 @@ const STATUS_KIND: Record<AppointmentStatus, StatusKind> = {
 
 type Mode = "none" | "confirm" | "reschedule";
 
-function AppointmentRow({ a, episodeId }: { a: Appointment; episodeId: string }) {
+/** Queues a WhatsApp reminder from the approved template. The server
+ * refuses (409) when she has not agreed, has opted out, or WhatsApp is not set up. */
+function SendReminder({ a, personId }: { a: Appointment; personId?: string }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const send = useMutation({
+    mutationFn: () => messagingApi.queueReminder(a.id),
+    meta: { toast: t("msg.reminderQueued") },
+    onSuccess: () => {
+      setRefusal(null);
+      if (personId) void queryClient.invalidateQueries({ queryKey: ["personMessages", personId] });
+    },
+    onError: (err) => setRefusal(err instanceof ApiError ? err.message : t("states.errorBody")),
+  });
+  return (
+    <div className="space-y-2">
+      <Button variant="soft" size="sm" disabled={send.isPending} onClick={() => send.mutate()}>
+        <BellRing aria-hidden className="size-4" />
+        {send.isPending ? t("msg.reminderSending") : t("msg.sendReminder")}
+      </Button>
+      {refusal && (
+        <Alert kind="pending" title={t("msg.reminderRefused")}>
+          {refusal}
+        </Alert>
+      )}
+    </div>
+  );
+}
+
+function AppointmentRow({ a, episodeId, canSend, personId }: { a: Appointment; episodeId: string; canSend: boolean; personId?: string }) {
   const { t } = useTranslation();
   const errors = useActionError([["appointments", episodeId], ["episodeTasks", episodeId], ["tasks"]]);
   const [mode, setMode] = useState<Mode>("none");
@@ -107,6 +139,7 @@ function AppointmentRow({ a, episodeId }: { a: Appointment; episodeId: string })
         </div>
       )}
       {a.status === "CONFIRMED" && mode === "none" && <p className="text-sm text-muted">{t("care.appt.missedNote")}</p>}
+      {canSend && mode === "none" && (a.status === "REQUESTED" || a.status === "CONFIRMED") && <SendReminder a={a} personId={personId} />}
 
       {mode === "confirm" && (
         <InlineForm
@@ -144,8 +177,10 @@ function AppointmentRow({ a, episodeId }: { a: Appointment; episodeId: string })
   );
 }
 
-export function AppointmentList({ episodeId }: { episodeId: string }) {
+export function AppointmentList({ episodeId, facilityId, personId }: { episodeId: string; facilityId?: string; personId?: string }) {
   const { t } = useTranslation();
+  const { staff } = useSession();
+  const canSend = !!facilityId && canAt(staff?.memberships ?? [], facilityId, "SEND_MESSAGES");
   const appts = useQuery({ queryKey: ["appointments", episodeId], queryFn: () => careApi.listAppointments(episodeId) });
   return (
     <Card>
@@ -156,7 +191,7 @@ export function AppointmentList({ episodeId }: { episodeId: string }) {
         {appts.data && appts.data.length > 0 && (
           <ul className="space-y-3">
             {appts.data.map((a) => (
-              <AppointmentRow key={a.id} a={a} episodeId={episodeId} />
+              <AppointmentRow key={a.id} a={a} episodeId={episodeId} canSend={canSend} personId={personId} />
             ))}
           </ul>
         )}
