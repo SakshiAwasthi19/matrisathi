@@ -12,10 +12,12 @@ from app.core.security import (
     new_refresh_token,
     verify_password,
 )
+from app.domain.permissions import capabilities_of
 from app.models.audit import AuditOutcome
 from app.models.facility import Facility
+from app.models.organization import Organization, OrganizationAdmin
 from app.models.staff import LoginAttempt, RefreshToken, StaffMembership, StaffUser
-from app.schemas.auth import LoginRequest, MembershipOut, StaffOut
+from app.schemas.auth import AdminOrganizationOut, LoginRequest, MembershipOut, StaffOut
 from app.services import audit_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -35,9 +37,28 @@ def _staff_out(db: Session, staff: StaffUser) -> StaffOut:
         .all()
     )
     memberships = [
-        MembershipOut(facility_id=str(f.id), facility_name=f.name, role=m.role.value) for m, f in rows
+        MembershipOut(
+            facility_id=str(f.id),
+            facility_name=f.name,
+            role=m.role.value,
+            capabilities=sorted(c.value for c in capabilities_of([m.role.value])),
+        )
+        for m, f in rows
     ]
-    return StaffOut(id=str(staff.id), username=staff.username, full_name=staff.full_name, memberships=memberships)
+    admin_orgs = (
+        db.query(Organization)
+        .join(OrganizationAdmin, OrganizationAdmin.organization_id == Organization.id)
+        .filter(OrganizationAdmin.staff_user_id == staff.id, OrganizationAdmin.revoked_at.is_(None))
+        .order_by(Organization.name)
+        .all()
+    )
+    return StaffOut(
+        id=str(staff.id),
+        username=staff.username,
+        full_name=staff.full_name,
+        memberships=memberships,
+        admin_organizations=[AdminOrganizationOut(id=str(o.id), name=o.name) for o in admin_orgs],
+    )
 
 
 def _set_session_cookies(response: Response, access_token: str, refresh_token: str) -> None:

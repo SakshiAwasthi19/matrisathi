@@ -11,6 +11,9 @@ from app.models.base import Base, TimestampMixin, uuid_pk
 
 class StaffRole(str, enum.Enum):
     ASHA = "ASHA"
+    # ANM (auxiliary nurse midwife): its own role from F004/M008 Q9. Starts with
+    # the same capabilities as NURSE (app/domain/permissions.py).
+    ANM = "ANM"
     NURSE = "NURSE"
     COORDINATOR = "COORDINATOR"
     DOCTOR = "DOCTOR"

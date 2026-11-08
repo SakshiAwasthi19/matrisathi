@@ -25,6 +25,7 @@ from sqlalchemy.orm.exc import StaleDataError
 from app.core.config import settings
 from app.core.db import get_db
 from app.core.deps import find_active_membership, get_current_staff, require_csrf_header, require_facility_membership
+from app.domain.permissions import CLINICAL, DENIED_MESSAGE, Capability, has_capability
 from app.domain.transitions import (
     APPOINTMENT_TRANSITIONS,
     CARE_PLAN_TRANSITIONS,
@@ -34,7 +35,6 @@ from app.domain.transitions import (
     TransitionError,
     check_transition,
     check_version,
-    is_clinician,
 )
 from app.models.audit import AuditOutcome
 from app.models.care import (
@@ -147,10 +147,14 @@ def _episode(db: Session, staff: StaffUser, episode_id: str, action: str) -> tup
     return episode, _membership_for(db, staff, episode.facility_id, action, "PregnancyEpisode", episode.id)
 
 
-def _require_clinician(staff: StaffUser, membership: StaffMembership, action: str, entity_type: str, entity_id: object) -> None:
-    if not is_clinician([membership.role.value]):
-        _audit(staff, action, entity_type, entity_id, AuditOutcome.DENIED, reason="clinician_only")
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Only a clinician can do this.")
+def _require_capability(
+    staff: StaffUser, membership: StaffMembership, capability: Capability, action: str, entity_type: str, entity_id: object
+) -> None:
+    """Role check at the record's facility, from the role-capability table."""
+    if not has_capability([membership.role.value], capability):
+        reason = "clinician_only" if capability in CLINICAL else "role_not_permitted"
+        _audit(staff, action, entity_type, entity_id, AuditOutcome.DENIED, reason=reason, capability=capability)
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=DENIED_MESSAGE[capability])
 
 
 def _transition(
@@ -303,7 +307,7 @@ def confirm_dating(
 ) -> DatingOut:
     """Clinician-only: confirm the current provisional entry as it stands."""
     episode, membership = _episode(db, staff, episode_id, "confirm_dating")
-    _require_clinician(staff, membership, "confirm_dating", "PregnancyEpisode", episode.id)
+    _require_capability(staff, membership, Capability.CONFIRM_DATING, "confirm_dating", "PregnancyEpisode", episode.id)
     current = _current_dating(db, episode.id)
     if current is None or str(current.id) != body.dating_id:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=STALE)
@@ -332,7 +336,7 @@ def correct_dating(
     that were timed by pregnancy week are cancelled, and one review task asks
     the clinician to rebook them (no week rule is approved yet, D05)."""
     episode, membership = _episode(db, staff, episode_id, "correct_dating")
-    _require_clinician(staff, membership, "correct_dating", "PregnancyEpisode", episode.id)
+    _require_capability(staff, membership, Capability.CONFIRM_DATING, "correct_dating", "PregnancyEpisode", episode.id)
     current = _current_dating(db, episode.id)
     _version(current.version if current else 0, body.expected_version)
     new = EpisodeDating(
@@ -494,7 +498,7 @@ def publish_care_plan(
     template supersedes the active plan: its future, not-yet-attended items
     are cancelled; past and attended items are kept."""
     episode, membership = _episode(db, staff, episode_id, "publish_care_plan")
-    _require_clinician(staff, membership, "publish_care_plan", "PregnancyEpisode", episode.id)
+    _require_capability(staff, membership, Capability.PUBLISH_CARE_PLAN, "publish_care_plan", "PregnancyEpisode", episode.id)
     if episode.status is not PregnancyEpisodeStatus.ACTIVE:
         raise HTTPException(status.HTTP_409_CONFLICT, detail="This pregnancy episode is not active.")
 

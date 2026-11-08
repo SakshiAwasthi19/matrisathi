@@ -155,6 +155,14 @@ export interface Membership {
   facility_id: string;
   facility_name: string;
   role: string;
+  /** What this role may do at this facility (server's role-capability table).
+   * For hiding buttons only; the server checks every action itself. */
+  capabilities?: string[];
+}
+
+export interface AdminOrganization {
+  id: string;
+  name: string;
 }
 
 export interface Staff {
@@ -162,6 +170,8 @@ export interface Staff {
   username: string;
   full_name: string;
   memberships: Membership[];
+  /** Organisations this user administers (gives no access to records). */
+  admin_organizations?: AdminOrganization[];
 }
 
 export type AgePrecision = "EXACT_DOB" | "YEAR_ONLY" | "APPROXIMATE_AGE" | "UNKNOWN";
@@ -176,6 +186,8 @@ export interface Person {
   preferred_language: string | null;
   reported_medical_history: string | null;
   known_allergies_medicines: string | null;
+  /** True when the caller's role may not see reported history/allergies. */
+  reported_history_withheld?: boolean;
   registering_facility_id: string;
   phone: string;
   contact_verified_at: string | null;
@@ -710,4 +722,156 @@ export type OverviewSummary = Record<AttentionBucket, { count: number; records: 
 
 export const overviewApi = {
   summary: () => request<OverviewSummary>("/overview/summary"),
+};
+
+// --- Administration (F004) and audit (F037): organisation admins only ---------
+
+export type StaffRole = "ASHA" | "ANM" | "NURSE" | "COORDINATOR" | "DOCTOR";
+
+export interface Facility {
+  id: string;
+  organization_id: string;
+  name: string;
+  active: boolean;
+}
+
+export interface OrgMembership {
+  id: string;
+  facility_id: string;
+  facility_name: string;
+  role: StaffRole;
+  active: boolean;
+  granted_at: string;
+  revoked_at: string | null;
+}
+
+export interface OrgStaff {
+  id: string;
+  username: string;
+  full_name: string;
+  active: boolean;
+  memberships: OrgMembership[];
+}
+
+export interface AuditEvent {
+  id: string;
+  occurred_at: string;
+  actor_id: string;
+  actor_name: string;
+  actor_username: string;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  outcome: "SUCCESS" | "DENIED";
+  details: Record<string, string>;
+}
+
+export interface AuditPage {
+  events: AuditEvent[];
+  has_more: boolean;
+}
+
+export interface AuditFilter {
+  outcome?: "SUCCESS" | "DENIED";
+  action?: string;
+  before?: string;
+  limit?: number;
+}
+
+export const adminApi = {
+  facilities: (orgId: string) => request<Facility[]>(`/organizations/${orgId}/facilities`),
+  createFacility: (orgId: string, name: string) => post<Facility>(`/organizations/${orgId}/facilities`, { name }),
+  staff: (orgId: string, includeRevoked: boolean) =>
+    request<OrgStaff[]>(`/organizations/${orgId}/staff?include_revoked=${includeRevoked}`),
+  createStaff: (body: {
+    organization_id: string;
+    username: string;
+    full_name: string;
+    password: string;
+    facility_id: string;
+    role: StaffRole;
+  }) => post<{ id: string; username: string; full_name: string }>("/staff", body),
+  grant: (facilityId: string, staffUserId: string, role: StaffRole) =>
+    post<{ id: string }>(`/facilities/${facilityId}/memberships`, { staff_user_id: staffUserId, role }),
+  changeRole: (facilityId: string, membershipId: string, role: StaffRole) =>
+    post<{ id: string }>(`/facilities/${facilityId}/memberships/${membershipId}/role`, { role }),
+  revoke: (facilityId: string, membershipId: string) =>
+    request<void>(`/facilities/${facilityId}/memberships/${membershipId}`, { method: "DELETE" }),
+  audit: (orgId: string, filter: AuditFilter) => {
+    const q = new URLSearchParams();
+    Object.entries(filter).forEach(([k, v]) => {
+      if (v !== undefined && v !== "") q.set(k, String(v));
+    });
+    return request<AuditPage>(`/organizations/${orgId}/audit?${q.toString()}`);
+  },
+};
+
+// --- Family access grants (F015, D07 option 3: staff-managed) -------------------
+
+export type CaregiverScope = "NEXT_ACTION" | "BIRTH_PLAN" | "REMINDERS";
+export type VerificationMethod = "IN_PERSON_DOCUMENT" | "IN_PERSON_KNOWN_TO_STAFF" | "IN_PERSON_OTHER";
+export type RevokeReason = "REQUESTED_BY_SUBJECT" | "SAFETY_CONCERN" | "REPLACED" | "RECORDED_IN_ERROR";
+
+export interface CaregiverGrant {
+  id: string;
+  subject_person_id: string;
+  grantee_person_id: string;
+  grantee_full_name: string;
+  scopes: CaregiverScope[];
+  verification_method: VerificationMethod;
+  recorded_by_name: string | null;
+  verified_by_name: string | null;
+  created_at: string;
+  expires_at: string;
+  expires_on: string;
+  revoked_at: string | null;
+  revoked_by_name: string | null;
+  revoke_reason: RevokeReason | null;
+  state: "ACTIVE" | "EXPIRED" | "REVOKED";
+  version: number;
+}
+
+export const caregiverApi = {
+  list: (personId: string) => request<CaregiverGrant[]>(`/people/${personId}/caregiver-grants`),
+  grant: (
+    personId: string,
+    body: {
+      grantee_person_id: string;
+      scopes: CaregiverScope[];
+      verification_method: VerificationMethod;
+      expires_on: string | null;
+      consent_confirmed: boolean;
+    },
+  ) => post<CaregiverGrant>(`/people/${personId}/caregiver-grants`, body),
+  revoke: (grantId: string, expectedVersion: number, reason: RevokeReason) =>
+    post<CaregiverGrant>(`/caregiver-grants/${grantId}/revoke`, { expected_version: expectedVersion, reason }),
+};
+
+// --- Team workload and handover (F038) ----------------------------------------------
+
+export type HandoverReason = "ON_LEAVE" | "UNAVAILABLE_TODAY" | "LEFT_FACILITY" | "BALANCING_WORKLOAD";
+
+export interface PersonLoad {
+  staff_user_id: string;
+  full_name: string;
+  role: string | null;
+  works_here: boolean;
+  owned_open: number;
+  owned_overdue: number;
+  backup_open: number;
+}
+
+export interface Workload {
+  facility_id: string;
+  unowned_open: number;
+  people: PersonLoad[];
+  as_of: string;
+}
+
+export const workApi = {
+  workload: (facilityId: string) => request<Workload>(`/facilities/${facilityId}/workload`),
+  handover: (
+    facilityId: string,
+    body: { from_staff_user_id: string; to_staff_user_id: string; reason: HandoverReason; include_backup: boolean },
+  ) => post<{ owner_moved: number; backup_moved: number }>(`/facilities/${facilityId}/handover`, body),
 };

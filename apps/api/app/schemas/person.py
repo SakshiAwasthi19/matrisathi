@@ -47,6 +47,9 @@ class PersonOut(BaseModel):
     preferred_language: str | None
     reported_medical_history: str | None
     known_allergies_medicines: str | None
+    # True when the caller's role may not see reported history/allergies, so
+    # screens say "hidden for your role" rather than "not recorded".
+    reported_history_withheld: bool = False
     registering_facility_id: str
     phone: str
     contact_verified_at: datetime | None

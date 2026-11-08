@@ -2,12 +2,12 @@ import { HeartPulse, LogOut, Menu, MoreHorizontal, Search, Siren, X } from "luci
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
-import { navItemsFor, rolesOf, type NavGroup, type NavItem } from "../lib/nav";
+import { ADMIN_NAV_ITEM, navItemsFor, rolesOf, type NavGroup, type NavItem } from "../lib/nav";
 import { cn } from "../lib/utils";
 import { useSession } from "../state/session";
 import { Avatar } from "./Avatar";
 
-const GROUPS: NavGroup[] = ["work", "network", "preview"];
+const GROUPS: NavGroup[] = ["work", "network", "manage", "preview"];
 
 function Brand() {
   const { t } = useTranslation();
@@ -172,7 +172,8 @@ export function AppShell() {
   const { staff } = useSession();
   const location = useLocation();
   const [drawer, setDrawer] = useState(false);
-  const items = navItemsFor(rolesOf(staff?.memberships ?? []));
+  const isOrgAdmin = (staff?.admin_organizations?.length ?? 0) > 0;
+  const items = [...navItemsFor(rolesOf(staff?.memberships ?? [])), ...(isOrgAdmin ? [ADMIN_NAV_ITEM] : [])];
   const bottom = items.filter((i) => ["/", "/today", "/mothers"].includes(i.to));
 
   // Close the drawer on navigation and on Escape.

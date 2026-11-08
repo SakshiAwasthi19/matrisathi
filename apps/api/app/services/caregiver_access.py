@@ -44,3 +44,41 @@ def caregiver_access_allowed(
         .limit(1)
     ).first()
     return grant is not None
+
+
+def grant_state(grant: CaregiverGrant, now: datetime) -> str:
+    """REVOKED, EXPIRED or ACTIVE at `now`."""
+    if grant.revoked_at is not None:
+        return "REVOKED"
+    if grant.expires_at <= now:
+        return "EXPIRED"
+    return "ACTIVE"
+
+
+def caregiver_may_receive(
+    db: Session,
+    *,
+    subject_person_id: uuid.UUID,
+    grantee_person_id: uuid.UUID,
+    scope: CaregiverScope,
+    now: datetime | None = None,
+) -> bool:
+    """Staff-side check (D07 option 3): may staff share `scope` with this
+    adult on the mother's behalf? Same grant rules as caregiver_access_allowed,
+    but not tied to PATIENT_ACCESS_ENABLED, which gates patient sign-in only
+    (none exists under option 3). Ask again before every share; never cache."""
+    if subject_person_id == grantee_person_id:
+        return False
+    moment = now or datetime.now(timezone.utc)
+    grant = db.execute(
+        select(CaregiverGrant.id)
+        .where(
+            CaregiverGrant.subject_person_id == subject_person_id,
+            CaregiverGrant.grantee_person_id == grantee_person_id,
+            CaregiverGrant.scopes.contains([scope.value]),
+            CaregiverGrant.revoked_at.is_(None),
+            CaregiverGrant.expires_at > moment,
+        )
+        .limit(1)
+    ).first()
+    return grant is not None

@@ -13,9 +13,9 @@ describe("role-aware navigation", () => {
   });
 
   it("shows every current page to every role", () => {
-    for (const role of ["ASHA", "NURSE", "COORDINATOR", "DOCTOR"]) {
+    for (const role of ["ASHA", "ANM", "NURSE", "COORDINATOR", "DOCTOR"]) {
       expect(navItemsFor(new Set([role]))).toEqual([...NAV_ITEMS]);
-      expect(navItemsFor(new Set([role])).map((i) => i.to)).toEqual(["/", "/today", "/mothers", "/contacts", "/messages", "/children", "/insights"]);
+      expect(navItemsFor(new Set([role])).map((i) => i.to)).toEqual(["/", "/today", "/mothers", "/workload", "/contacts", "/messages", "/children", "/insights"]);
     }
   });
 

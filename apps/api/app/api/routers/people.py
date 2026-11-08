@@ -10,8 +10,10 @@ from app.core.deps import (
     require_active_facility,
     require_csrf_header,
     require_facility_membership,
+    roles_at_facility,
 )
 from app.api.routers.pregnancies import to_out as episode_to_out
+from app.domain.permissions import DENIED_MESSAGE, Capability, has_capability
 from app.models.audit import AuditOutcome
 from app.models.identity import ContactMethod, ContactType, Person
 from app.models.pregnancy import PregnancyEpisode
@@ -46,7 +48,11 @@ def _verifier_name(db: Session, contact: ContactMethod | None) -> str | None:
     return verifier.full_name if verifier else None
 
 
-def _to_out(db: Session, person: Person, contact: ContactMethod | None) -> PersonOut:
+def _to_out(db: Session, staff: StaffUser, person: Person, contact: ContactMethod | None) -> PersonOut:
+    # Reported history and allergies follow the role-capability table (M008 Q12).
+    show_history = has_capability(
+        roles_at_facility(db, staff, person.registering_facility_id), Capability.VIEW_REPORTED_HISTORY
+    )
     return PersonOut(
         id=str(person.id),
         full_name=person.full_name,
@@ -55,8 +61,9 @@ def _to_out(db: Session, person: Person, contact: ContactMethod | None) -> Perso
         birth_year=person.birth_year,
         reported_age_years=person.reported_age_years,
         preferred_language=person.preferred_language,
-        reported_medical_history=person.reported_medical_history,
-        known_allergies_medicines=person.known_allergies_medicines,
+        reported_medical_history=person.reported_medical_history if show_history else None,
+        known_allergies_medicines=person.known_allergies_medicines if show_history else None,
+        reported_history_withheld=not show_history,
         registering_facility_id=str(person.registering_facility_id),
         phone=contact.value if contact else "",
         contact_verified_at=contact.verified_at if contact else None,
@@ -116,7 +123,7 @@ def search_people(
         outcome=AuditOutcome.SUCCESS,
         metadata={"result_count": len(rows)},
     )
-    return [_to_out(db, person, contact) for person, contact in rows]
+    return [_to_out(db, staff, person, contact) for person, contact in rows]
 
 
 @router.post("", response_model=PersonOut, status_code=status.HTTP_201_CREATED)
@@ -148,7 +155,7 @@ def create_person(
             if existing_person is None:
                 raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
             require_facility_membership(db, staff, existing_person.registering_facility_id)
-            return _to_out(db, existing_person, _primary_contact(db, existing_person.id))
+            return _to_out(db, staff, existing_person, _primary_contact(db, existing_person.id))
         claimed_row_id = result.idempotency_row_id
 
     facility_id = uuid.UUID(body.facility_id)
@@ -168,6 +175,16 @@ def create_person(
             metadata={"facility_id": str(facility_id)},
         )
         raise
+    if not has_capability(roles_at_facility(db, staff, facility_id), Capability.REGISTER_MOTHER):
+        audit_service.record_event(
+            actor_staff_user_id=staff.id,
+            action="create",
+            entity_type="Person",
+            entity_id=None,
+            outcome=AuditOutcome.DENIED,
+            metadata={"facility_id": str(facility_id), "reason": "role_not_permitted"},
+        )
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=DENIED_MESSAGE[Capability.REGISTER_MOTHER])
 
     person = Person(
         full_name=body.full_name,
@@ -201,7 +218,7 @@ def create_person(
         outcome=AuditOutcome.SUCCESS,
         metadata={"facility_id": str(facility_id)},
     )
-    return _to_out(db, person, contact)
+    return _to_out(db, staff, person, contact)
 
 
 @router.get("/{person_id}", response_model=PersonOut)
@@ -236,7 +253,7 @@ def get_person(
         outcome=AuditOutcome.SUCCESS,
         metadata={},
     )
-    return _to_out(db, person, contact)
+    return _to_out(db, staff, person, contact)
 
 
 @router.get("/{person_id}/episodes", response_model=list[PregnancyEpisodeOut])
@@ -314,4 +331,4 @@ def verify_contact(
         outcome=AuditOutcome.SUCCESS,
         metadata={"person_id": str(person.id)},
     )
-    return _to_out(db, person, contact)
+    return _to_out(db, staff, person, contact)

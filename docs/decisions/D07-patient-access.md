@@ -1,6 +1,13 @@
 # D07: How mothers and caregivers get access
 
-**Status:** Proposed. **Decides:** manager with the tech lead. **Written:** 2026-11-07 (W2-A2).
+**Status:** Option 3 chosen by the developer on 2026-11-08, for the manager and tech lead to confirm at the Saturday review. **Decides:** manager with the tech lead. **Written:** 2026-11-07 (W2-A2).
+
+## Decision record (2026-11-08)
+
+- **Option 3: no mother or caregiver sign-in for the pilot.** Staff record, show and revoke caregiver grants; staff check the list before sharing anything. Built on branch `feat/f004-f015-f037-f038` (not yet merged): `app/api/routers/caregivers.py`, the "Family access" tab, and `caregiver_may_receive` for the staff-side check.
+- `PATIENT_ACCESS_ENABLED` stays **off**: it gates patient sign-in, which option 3 does not build. `caregiver_access_allowed` is unchanged.
+- Defaults applied until the questions below are answered: grant length 90 days (maximum one year); caregivers never see history, allergies, reports or private concerns (scopes are next step, birth plan, reminders only); any staff role may record or revoke (role-capability table, `MANAGE_CAREGIVER_GRANTS`), with "Safety concern" as a revoke reason.
+- Still open for the manager: questions 2, 4, 5 and 6 below.
 **Spec:** M010, T010, F015, G10, G14. **Blocks:** any patient-facing sign-in, the caregiver screens (W2-B3) and AT28.
 
 ## The question
