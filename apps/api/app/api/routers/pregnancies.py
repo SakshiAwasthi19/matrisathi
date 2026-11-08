@@ -10,7 +10,9 @@ from app.core.deps import (
     require_active_facility,
     require_csrf_header,
     require_facility_membership,
+    roles_at_facility,
 )
+from app.domain.permissions import DENIED_MESSAGE, Capability, has_capability
 from app.models.audit import AuditOutcome
 from app.models.identity import Person
 from app.models.pregnancy import ONE_ACTIVE_EPISODE_INDEX, PregnancyEpisode, PregnancyEpisodeStatus
@@ -128,6 +130,16 @@ def create_pregnancy_episode(
             metadata={"reason": "person_not_found_or_inaccessible"},
         )
         raise
+    if not has_capability(roles_at_facility(db, staff, person.registering_facility_id), Capability.REGISTER_MOTHER):
+        audit_service.record_event(
+            actor_staff_user_id=staff.id,
+            action="create",
+            entity_type="PregnancyEpisode",
+            entity_id=None,
+            outcome=AuditOutcome.DENIED,
+            metadata={"reason": "role_not_permitted"},
+        )
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=DENIED_MESSAGE[Capability.REGISTER_MOTHER])
 
     # D13: one ACTIVE episode per mother. Checked here for a clear answer;
     # the partial unique index below is what actually guarantees it under

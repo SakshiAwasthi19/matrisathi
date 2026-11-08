@@ -16,11 +16,14 @@ from app.core.db import SessionLocal
 from app.core.security import hash_password
 from app.core.startup_checks import is_development
 from app.models.facility import Facility
-from app.models.organization import Organization
+from app.models.organization import Organization, OrganizationAdmin
 from app.models.staff import StaffMembership, StaffRole, StaffUser
 
 DEV_USERNAME = "coordinator1"
 DEV_DOCTOR_USERNAME = "doctor1"
+# Organisation admin with NO facility membership: manages staff and views the
+# audit trail, and by design cannot open any mother's record (F004).
+DEV_ADMIN_USERNAME = "admin1"
 DEV_PASSWORD = "synthetic-dev-password-123"  # noqa: S105 — synthetic, local dev only
 MIN_SEED_PASSWORD_LENGTH = 12
 
@@ -55,6 +58,19 @@ def _ensure_staff(db, username: str, full_name: str, role: StaffRole, facility_i
     return True
 
 
+def _ensure_org_admin(db, username: str, full_name: str, facility_id, password: str) -> bool:  # type: ignore[no-untyped-def]
+    """Creates an organisation admin (no facility membership) for the
+    facility's organisation unless the username already exists."""
+    if db.query(StaffUser).filter(StaffUser.username == username).first():
+        return False
+    facility = db.get(Facility, facility_id)
+    user = StaffUser(username=username, full_name=full_name, phone=None, password_hash=hash_password(password), active=True)
+    db.add(user)
+    db.flush()
+    db.add(OrganizationAdmin(organization_id=facility.organization_id, staff_user_id=user.id))
+    return True
+
+
 def main() -> None:
     password = resolve_seed_password(settings.env, os.environ)
     show_password = is_development(settings.env)
@@ -86,11 +102,13 @@ def main() -> None:
         # A synthetic clinician, so plan publishing and dating confirmation
         # (DOCTOR-only) can be built and demonstrated.
         created_doctor = _ensure_staff(db, DEV_DOCTOR_USERNAME, "Synthetic Doctor", StaffRole.DOCTOR, facility_id, password)
+        created_admin = _ensure_org_admin(db, DEV_ADMIN_USERNAME, "Synthetic Org Admin", facility_id, password)
         db.commit()
 
         print("Synthetic data ready:")
         print(f"  coordinator  = {login_line(DEV_USERNAME)}")
         print(f"  doctor       = {login_line(DEV_DOCTOR_USERNAME)}" + (" (created)" if created_doctor else ""))
+        print(f"  org admin    = {login_line(DEV_ADMIN_USERNAME)}" + (" (created)" if created_admin else ""))
     finally:
         db.close()
 

@@ -8,12 +8,13 @@ Clinician-only moves record clinical decisions; they never compute one.
 from collections.abc import Iterable, Mapping
 from enum import Enum
 
+from app.domain.permissions import CLINICAL, ROLE_CAPABILITIES, Capability, has_capability
 from app.models.care import AppointmentStatus, CarePlanStatus, InvestigationStatus, TaskStatus
 from app.models.records import ReferralStatus
 
-# One place to change who counts as a clinician (Phase 1 plan section 5;
-# confirm with the tech lead (D04) and the doctor (M008 question 10)).
-CLINICIAN_ROLES: frozenset[str] = frozenset({"DOCTOR"})
+# Roles that hold any clinical capability. Derived from the single
+# role-capability table (app/domain/permissions.py); change it there.
+CLINICIAN_ROLES: frozenset[str] = frozenset(r for r, caps in ROLE_CAPABILITIES.items() if caps & CLINICAL)
 
 A = AppointmentStatus
 APPOINTMENT_TRANSITIONS: Mapping[Enum, frozenset[Enum]] = {
@@ -65,14 +66,12 @@ REFERRAL_TRANSITIONS: Mapping[Enum, frozenset[Enum]] = {
     R.CLOSED: frozenset(),
 }
 
-# (from, to) moves that only a clinician may make.
-CLINICIAN_ONLY: frozenset[tuple[Enum, Enum]] = frozenset(
-    {
-        (Inv.RECEIVED, Inv.REVIEWED),  # marking a report reviewed (F009)
-        (P.ACTIVE, P.SUPERSEDED),  # replacing a published plan (F005)
-        (P.ACTIVE, P.CANCELLED),
-    }
-)
+# (from, to) moves that need a clinical capability, and which one.
+CLINICIAN_ONLY: Mapping[tuple[Enum, Enum], Capability] = {
+    (Inv.RECEIVED, Inv.REVIEWED): Capability.REVIEW_REPORT,  # marking a report reviewed (F009)
+    (P.ACTIVE, P.SUPERSEDED): Capability.PUBLISH_CARE_PLAN,  # replacing a published plan (F005)
+    (P.ACTIVE, P.CANCELLED): Capability.PUBLISH_CARE_PLAN,
+}
 
 
 class TransitionError(ValueError):
@@ -97,7 +96,8 @@ def check_transition(
     """Raises TransitionError or ClinicianOnlyError; returns None if allowed."""
     if target not in transitions.get(current, frozenset()):
         raise TransitionError(f"{current.value} -> {target.value} is not allowed")
-    if (current, target) in CLINICIAN_ONLY and not is_clinician(roles):
+    needed = CLINICIAN_ONLY.get((current, target))
+    if needed is not None and not has_capability(roles, needed):
         raise ClinicianOnlyError(f"{current.value} -> {target.value} is a clinician-only action")
 
 

@@ -101,3 +101,18 @@ def require_org_admin(db: Session, staff: StaffUser, organization_id: uuid.UUID)
     if grant is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
     return grant
+
+
+def roles_at_facility(db: Session, staff: StaffUser, facility_id: uuid.UUID) -> list[str]:
+    """The caller's live roles at one facility (empty if not a member)."""
+    rows = (
+        db.query(StaffMembership.role)
+        .filter(
+            StaffMembership.staff_user_id == staff.id,
+            StaffMembership.facility_id == facility_id,
+            StaffMembership.active.is_(True),
+            StaffMembership.revoked_at.is_(None),
+        )
+        .all()
+    )
+    return [r[0].value for r in rows]

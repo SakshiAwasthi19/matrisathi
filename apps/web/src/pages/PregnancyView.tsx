@@ -6,6 +6,8 @@ import {
   FileStack,
   Footprints,
   LayoutGrid,
+  EyeOff,
+  HeartHandshake,
   NotebookTabs,
   Phone,
   PhoneCall,
@@ -21,6 +23,7 @@ import { BirthPlanPanel } from "../components/care/BirthPlanPanel";
 import { CarePlanPanel } from "../components/care/CarePlanPanel";
 import { DatingCard } from "../components/care/DatingCard";
 import { EpisodeTasks } from "../components/care/EpisodeTasks";
+import { FamilyAccessPanel } from "../components/care/FamilyAccessPanel";
 import { errorStateKind, PageState } from "../components/PageState";
 import { ObservationsPanel } from "../components/records/ObservationsPanel";
 import { PrescriptionsPanel } from "../components/records/PrescriptionsPanel";
@@ -32,7 +35,7 @@ import { CardSkeleton, Skeleton, Tabs, type TabItem } from "../components/ui/kit
 import { Alert, StatusBadge, type StatusKind } from "../components/ui/status";
 import i18n from "../i18n";
 import { formatAge } from "../lib/age";
-import { isClinicianAt } from "../lib/roles";
+import { canAt, isClinicianAt } from "../lib/roles";
 import { useSession } from "../state/session";
 
 const DATING_STATUS: Record<string, StatusKind> = {
@@ -41,8 +44,8 @@ const DATING_STATUS: Record<string, StatusKind> = {
   CLINICIAN_CONFIRMED: "confirmed",
 };
 
-type RecordTab = "overview" | "care" | "records" | "birth";
-const TABS: RecordTab[] = ["overview", "care", "records", "birth"];
+type RecordTab = "overview" | "care" | "records" | "birth" | "family";
+const TABS: RecordTab[] = ["overview", "care", "records", "birth", "family"];
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -79,6 +82,17 @@ function RecordSkeleton() {
         <CardSkeleton lines={4} />
       </div>
     </div>
+  );
+}
+
+/** Shown instead of reported history when the caller's role may not see it. */
+function Withheld() {
+  const { t } = useTranslation();
+  return (
+    <span className="inline-flex items-center gap-1.5 text-sm text-muted">
+      <EyeOff aria-hidden className="size-4" />
+      {t("episode.withheld")}
+    </span>
   );
 }
 
@@ -163,6 +177,7 @@ export function PregnancyView() {
     { value: "care", label: t("episode.tab.care"), icon: CalendarCheck },
     { value: "records", label: t("episode.tab.records"), icon: FileStack },
     { value: "birth", label: t("episode.tab.birth"), icon: NotebookTabs },
+    { value: "family", label: t("episode.tab.family"), icon: HeartHandshake },
   ];
 
   return (
@@ -242,13 +257,21 @@ export function PregnancyView() {
                         )}
                       </Row>
                       <Row label={t("episode.history")}>
-                        {mother.data.reported_medical_history || (
-                          <StatusBadge kind="not-recorded">{t("status.notRecorded")}</StatusBadge>
+                        {mother.data.reported_history_withheld ? (
+                          <Withheld />
+                        ) : (
+                          mother.data.reported_medical_history || (
+                            <StatusBadge kind="not-recorded">{t("status.notRecorded")}</StatusBadge>
+                          )
                         )}
                       </Row>
                       <Row label={t("episode.allergies")}>
-                        {mother.data.known_allergies_medicines || (
-                          <StatusBadge kind="not-recorded">{t("status.notRecorded")}</StatusBadge>
+                        {mother.data.reported_history_withheld ? (
+                          <Withheld />
+                        ) : (
+                          mother.data.known_allergies_medicines || (
+                            <StatusBadge kind="not-recorded">{t("status.notRecorded")}</StatusBadge>
+                          )
                         )}
                       </Row>
                       <Row label={t("episode.contactLabel")}>
@@ -340,6 +363,12 @@ export function PregnancyView() {
         )}
 
         {tab === "birth" && <BirthPlanPanel episodeId={e.id} facilityId={e.facility_id} isClinician={isClinician} />}
+        {tab === "family" && (
+          <FamilyAccessPanel
+            mother={mother.data}
+            canManage={canAt(staff?.memberships ?? [], e.facility_id, "MANAGE_CAREGIVER_GRANTS")}
+          />
+        )}
       </div>
 
       <p className="text-sm text-muted">{t("episode.reloadNote")}</p>

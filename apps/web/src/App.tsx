@@ -25,6 +25,8 @@ const Landing = lazy(() => import("./pages/Landing").then((m) => ({ default: m.L
 const Messages = lazy(() => import("./pages/preview/Messages").then((m) => ({ default: m.Messages })));
 const Children = lazy(() => import("./pages/preview/Children").then((m) => ({ default: m.Children })));
 const Insights = lazy(() => import("./pages/preview/Insights").then((m) => ({ default: m.Insights })));
+const Admin = lazy(() => import("./pages/admin/Admin").then((m) => ({ default: m.Admin })));
+const Workload = lazy(() => import("./pages/Workload").then((m) => ({ default: m.Workload })));
 
 function Lazy({ children }: { children: ReactNode }) {
   return <Suspense fallback={<PageState kind="loading" />}>{children}</Suspense>;
@@ -101,6 +103,16 @@ function SessionRoot({ children }: { children: ReactNode }) {
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 
+/** An organisation admin with no facility membership has no records to work
+ * on (F004), so their home is the administration page. */
+function HomeRoute() {
+  const { staff } = useSession();
+  if (staff && staff.memberships.length === 0 && (staff.admin_organizations?.length ?? 0) > 0) {
+    return <Navigate to="/admin" replace />;
+  }
+  return <Overview />;
+}
+
 function RequireAuth({ children }: { children: ReactNode }) {
   const { staff } = useSession();
   const location = useLocation();
@@ -161,8 +173,10 @@ export function App() {
                         </RequireAuth>
                       }
                     >
-                      <Route index element={<Overview />} />
+                      <Route index element={<HomeRoute />} />
                       <Route path="today" element={<Today />} />
+                      <Route path="workload" element={<Lazy><Workload /></Lazy>} />
+                      <Route path="admin" element={<Lazy><Admin /></Lazy>} />
                       <Route path="mothers" element={<MotherRegister />} />
                       <Route path="contacts" element={<LocalContacts />} />
                       <Route path="episodes/:episodeId" element={<PregnancyView />} />

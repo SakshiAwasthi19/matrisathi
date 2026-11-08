@@ -25,7 +25,7 @@ from app.api.routers.care import (
 from app.api.routers.records import CONTACT_STALE_AFTER
 from app.core.db import get_db
 from app.core.deps import get_current_staff, require_csrf_header
-from app.domain.transitions import is_clinician
+from app.domain.permissions import Capability, has_capability
 from app.models.audit import AuditOutcome
 from app.models.birth_plan import AppointmentFamilyReport, BirthPlan, FamilyReport
 from app.models.care import (
@@ -228,7 +228,7 @@ def save_birth_plan(
 
     referral_site = facility_contact(body.referral_site_contact_id)
     current_referral = plan.referral_site_contact_id if plan else None
-    if referral_site != current_referral and not is_clinician([membership.role.value]):
+    if referral_site != current_referral and not has_capability([membership.role.value], Capability.CHOOSE_REFERRAL_SITE):
         _audit(staff, "save_birth_plan", "PregnancyEpisode", episode.id, AuditOutcome.DENIED, reason="clinician_only")
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Only a clinician can choose the referral site.")
 

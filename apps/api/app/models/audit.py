@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, String
+from sqlalchemy import DateTime, Enum, Index, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -25,6 +25,8 @@ class AuditEvent(Base):
     """
 
     __tablename__ = "audit_event"
+    # The audit view (F037) lists one organisation's events newest first, by actor.
+    __table_args__ = (Index("ix_audit_event_actor_occurred", "actor_staff_user_id", "occurred_at"),)
 
     id: Mapped[uuid.UUID] = uuid_pk()
     actor_staff_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)

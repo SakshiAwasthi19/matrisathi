@@ -21,7 +21,7 @@ from app.api.routers.care import (
     _membership_for,
     _name,
     _now,
-    _require_clinician,
+    _require_capability,
     _today,
     _transition,
     _uuid,
@@ -29,6 +29,7 @@ from app.api.routers.care import (
 )
 from app.core.db import get_db
 from app.core.deps import find_active_membership, get_current_staff, require_csrf_header
+from app.domain.permissions import Capability
 from app.domain.transitions import INVESTIGATION_TRANSITIONS, REFERRAL_TRANSITIONS
 from app.models.audit import AuditOutcome
 from app.models.care import CareTask, Investigation, InvestigationStatus, TaskKind, TaskOutcome, TaskStatus
@@ -274,7 +275,7 @@ def review_prescription(
         _audit(staff, "review_prescription", "Prescription", prescription_id, AuditOutcome.DENIED, reason="not_found")
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
     membership = _membership_for(db, staff, p.facility_id, "review_prescription", "Prescription", p.id)
-    _require_clinician(staff, membership, "review_prescription", "Prescription", p.id)
+    _require_capability(staff, membership, Capability.REVIEW_PRESCRIPTION, "review_prescription", "Prescription", p.id)
     _version(p.version, body.expected_version)
 
     p.reviewed_by_staff_user_id = staff.id
@@ -362,7 +363,7 @@ def record_observation(
     clinician-only. No value is compared with anything."""
     episode, membership = _episode(db, staff, episode_id, "record_observation")
     if body.kind is ObservationKind.CLINICIAN_FINDING:
-        _require_clinician(staff, membership, "record_observation", "PregnancyEpisode", episode.id)
+        _require_capability(staff, membership, Capability.RECORD_CLINICAL_FINDING, "record_observation", "PregnancyEpisode", episode.id)
     o = Observation(
         episode_id=episode.id,
         facility_id=episode.facility_id,
@@ -395,7 +396,7 @@ def correct_observation(
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Not found")
     membership = _membership_for(db, staff, old.facility_id, "correct_observation", "Observation", old.id)
     if old.kind is ObservationKind.CLINICIAN_FINDING or body.kind is ObservationKind.CLINICIAN_FINDING:
-        _require_clinician(staff, membership, "correct_observation", "Observation", old.id)
+        _require_capability(staff, membership, Capability.RECORD_CLINICAL_FINDING, "correct_observation", "Observation", old.id)
     if old.superseded_at is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, detail="This entry was already corrected.")
     _version(old.version, body.expected_version)
@@ -544,7 +545,7 @@ def create_referral(
 ) -> ReferralOut:
     """Clinician-only: the clinician chooses destination and urgency."""
     episode, membership = _episode(db, staff, episode_id, "create_referral")
-    _require_clinician(staff, membership, "create_referral", "PregnancyEpisode", episode.id)
+    _require_capability(staff, membership, Capability.CREATE_REFERRAL, "create_referral", "PregnancyEpisode", episode.id)
     contact_id = None
     if body.destination_contact_id:
         contact = db.get(LocalContact, _uuid(body.destination_contact_id))
