@@ -135,6 +135,19 @@ If the deploy log shows `Refusing to start with ENV='staging': …`, it names th
 4. **Web app.** Open the Vercel URL: the purple **STAGING** banner shows on the sign-in page. Sign in with your `SEED_PASSWORD`, register an invented mother, then reload `/episodes/<id>` directly: the record loads (deep link works) and the banner is still there.
 5. **Synthetic data only.** Every record entered on staging is invented. No real names or phone numbers, including in screenshots.
 
+## 7. WhatsApp messaging (SG3, provider sandbox until D06 is decided)
+
+Settings are listed **by name only**; values go in the host's environment settings, never in git, chat or screenshots.
+
+1. **Meta (manager/developer):** create the business app, add the WhatsApp **test number**, add the consenting staff handsets as allowed recipients, and create the templates (placeholders from `app/scripts/setup_messaging_sandbox.py` until the doctor approves M023).
+2. **API environment (Render):** `MESSAGING_PROVIDER=meta`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, and (staff test phones only) `MESSAGING_ALLOW_PLACEHOLDER_TEMPLATES=true`. With `meta`, the API refuses to start unless all three secrets are set.
+3. **Release step (migrator credentials, from your machine):** `uv run alembic upgrade head`, then `uv run python -m app.scripts.setup_messaging_sandbox --organization "<org>" --phone-number-id <test number ID>`.
+4. **Worker:** a second Render service (background worker) running `uv run python -m app.scripts.messaging_worker`, with the **same environment as the API** (app-role database URL only). More than one copy is safe.
+5. **Webhook:** in Meta's dashboard, callback URL `https://<staging-api>/api/v1/webhooks/whatsapp`, the verify token from step 2, subscribed to `messages`. Unsigned or wrongly signed posts get 401.
+6. **Verify:** run `docs/delivery/test-scripts/SG3.md`.
+
+**Approved content (D05/M015/M023):** when the doctor returns the packets, fill a copy of `docs/review/D05-approved-content.example.json` and run `uv run python -m app.scripts.load_approved_content <file>` (dry run), then add `--apply`. It writes through the migrator role; the app can only read it.
+
 ## What is enforced in code
 
 | Rule | Where | Test |
@@ -143,6 +156,8 @@ If the deploy log shows `Refusing to start with ENV='staging': …`, it names th
 | Migration refuses a missing/default/short/unsafe app-role password outside development | `apps/api/alembic/versions/0002_app_role_grants.py` | `tests/test_staging_safety.py` |
 | Seed refuses the committed password outside development and never prints it | `apps/api/app/scripts/seed_dev.py` | `tests/test_staging_safety.py` |
 | App role cannot run DDL | database grants | `test_app_db_role_cannot_run_ddl` |
+| Messaging enabled without its three secrets, or placeholder templates allowed in production | `apps/api/app/core/startup_checks.py` | `tests/test_messaging_config.py` |
+| Webhook rejects unsigned or wrongly signed posts | `apps/api/app/api/routers/webhooks.py` | `test_unsigned_or_wrongly_signed_webhooks_are_rejected_and_store_nothing` |
 | `/health` reports the environment | `apps/api/app/main.py` | `test_health_reports_environment_label` |
 | Login and refresh require the CSRF header | `apps/api/app/api/routers/auth.py` | `test_login_requires_csrf_header`, `test_refresh_requires_csrf_header` |
 

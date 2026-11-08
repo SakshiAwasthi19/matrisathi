@@ -1,7 +1,9 @@
+import { useQueries } from "@tanstack/react-query";
 import { HeartPulse, LogOut, Menu, MoreHorizontal, Search, Siren, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
+import { inboxApi } from "../api/client";
 import { ADMIN_NAV_ITEM, navItemsFor, rolesOf, type NavGroup, type NavItem } from "../lib/nav";
 import { cn } from "../lib/utils";
 import { useSession } from "../state/session";
@@ -24,7 +26,23 @@ function Brand() {
   );
 }
 
-function NavRow({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
+/** Open inbox items across the user's facilities, for the nav badge. Shares
+ * its cache with the Inbox page, so it costs no extra requests there. */
+function useInboxOpenCount(): number | undefined {
+  const { staff } = useSession();
+  const facilityIds = [...new Set((staff?.memberships ?? []).map((m) => m.facility_id))];
+  const results = useQueries({
+    queries: facilityIds.map((id) => ({
+      queryKey: ["inboxSummary", id],
+      queryFn: () => inboxApi.summary(id),
+      staleTime: 60_000,
+    })),
+  });
+  if (results.length === 0 || results.some((r) => !r.data)) return undefined;
+  return results.reduce((sum, r) => sum + (r.data?.open ?? 0), 0);
+}
+
+function NavRow({ item, onNavigate, count }: { item: NavItem; onNavigate?: () => void; count?: number }) {
   const { t } = useTranslation();
   const Icon = item.icon;
   return (
@@ -43,6 +61,12 @@ function NavRow({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }
         <>
           <Icon aria-hidden className={cn("size-[18px] shrink-0", isActive ? "text-brand" : "text-faint group-hover:text-muted")} />
           <span className="flex-1 truncate">{t(item.labelKey)}</span>
+          {count !== undefined && count > 0 && (
+            <span className="tabular rounded-full bg-brand-soft px-1.5 py-px text-xs font-semibold text-brand-strong">
+              <span aria-hidden>{count}</span>
+              <span className="sr-only">{t("nav.openCount", { count })}</span>
+            </span>
+          )}
           {item.preview && (
             <span className="rounded-full bg-accent-soft px-1.5 py-px text-[0.6875rem] font-semibold text-accent">
               {t("nav.previewTag")}
@@ -62,6 +86,7 @@ function SidebarBody({ items, onNavigate }: { items: NavItem[]; onNavigate?: () 
   const facilityId = staff?.memberships[0]?.facility_id;
   const facilityName = staff?.memberships[0]?.facility_name;
   const role = staff?.memberships[0]?.role;
+  const inboxOpen = useInboxOpenCount();
 
   return (
     <div className="flex h-full flex-col">
@@ -83,7 +108,7 @@ function SidebarBody({ items, onNavigate }: { items: NavItem[]; onNavigate?: () 
               <ul className="space-y-0.5">
                 {groupItems.map((item) => (
                   <li key={item.to}>
-                    <NavRow item={item} onNavigate={onNavigate} />
+                    <NavRow item={item} onNavigate={onNavigate} count={item.to === "/inbox" ? inboxOpen : undefined} />
                   </li>
                 ))}
               </ul>

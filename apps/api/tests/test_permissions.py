@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.domain import permissions
-from app.domain.permissions import CLINICAL, EVERYDAY, ROLE_CAPABILITIES, Capability, capabilities_of, has_capability
+from app.domain.permissions import CLINICAL, COORDINATION, EVERYDAY, ROLE_CAPABILITIES, Capability, capabilities_of, has_capability
 from app.domain.transitions import CLINICIAN_ROLES, INVESTIGATION_TRANSITIONS, ClinicianOnlyError, check_transition
 from app.main import app
 from app.models.care import InvestigationStatus
@@ -28,9 +28,12 @@ def _client(username: str) -> TestClient:
 
 
 def test_table_reproduces_the_rules_in_force_before_it():
-    """Only DOCTOR holds clinical capabilities; every role does everyday work."""
+    """Only DOCTOR holds clinical capabilities; every role does everyday work.
+    Since SG3, only COORDINATOR also triages the unlinked inbox (M018)."""
     assert ROLE_CAPABILITIES["DOCTOR"] == CLINICAL | EVERYDAY
-    for role in ("NURSE", "ANM", "COORDINATOR", "ASHA"):
+    assert ROLE_CAPABILITIES["COORDINATOR"] == EVERYDAY | COORDINATION
+    assert COORDINATION == {Capability.TRIAGE_UNLINKED_INBOX}
+    for role in ("NURSE", "ANM", "ASHA"):
         assert ROLE_CAPABILITIES[role] == EVERYDAY
     assert CLINICIAN_ROLES == {"DOCTOR"}
 
@@ -68,7 +71,7 @@ def test_me_reports_capabilities_per_membership_and_admin_organisations(db_sessi
     make_org_admin(db_session, w.coordinator, w.org)
 
     me = _client(w.coordinator.username).get("/api/v1/auth/me").json()
-    assert me["memberships"][0]["capabilities"] == sorted(c.value for c in EVERYDAY)
+    assert me["memberships"][0]["capabilities"] == sorted(c.value for c in EVERYDAY | COORDINATION)
     assert me["admin_organizations"] == [{"id": str(w.org.id), "name": w.org.name}]
 
     doc = _client(w.doctor.username).get("/api/v1/auth/me").json()

@@ -15,7 +15,7 @@ describe("role-aware navigation", () => {
   it("shows every current page to every role", () => {
     for (const role of ["ASHA", "ANM", "NURSE", "COORDINATOR", "DOCTOR"]) {
       expect(navItemsFor(new Set([role]))).toEqual([...NAV_ITEMS]);
-      expect(navItemsFor(new Set([role])).map((i) => i.to)).toEqual(["/", "/today", "/mothers", "/workload", "/contacts", "/messages", "/children", "/insights"]);
+      expect(navItemsFor(new Set([role])).map((i) => i.to)).toEqual(["/", "/today", "/inbox", "/mothers", "/workload", "/contacts", "/children", "/insights"]);
     }
   });
 
@@ -30,6 +30,20 @@ describe("role-aware navigation", () => {
     ];
     expect(navItemsFor(new Set(["ASHA"]), items).map((i) => i.to)).toEqual(["/b"]);
     expect(navItemsFor(new Set(["DOCTOR"]), items).map((i) => i.to)).toEqual(["/a", "/b"]);
+  });
+});
+
+describe("inbox", () => {
+  it("is a real work page for every role, not a preview", () => {
+    const inbox = NAV_ITEMS.find((i) => i.to === "/inbox");
+    expect(inbox).toBeDefined();
+    expect(inbox?.group).toBe("work");
+    expect(inbox?.preview).toBeFalsy();
+    expect([...(inbox?.roles ?? [])].sort()).toEqual(["ANM", "ASHA", "COORDINATOR", "DOCTOR", "NURSE"]);
+  });
+
+  it("replaces the sample-data messages preview", () => {
+    expect(NAV_ITEMS.some((i) => i.to === "/messages")).toBe(false);
   });
 });
 

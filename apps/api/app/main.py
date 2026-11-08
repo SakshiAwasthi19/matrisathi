@@ -1,7 +1,23 @@
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routers import admin, auth, care, caregivers, files, next_step, overview, people, pregnancies, public, records, work
+from app.api.routers import (
+    admin,
+    auth,
+    care,
+    caregivers,
+    files,
+    inbox,
+    messaging,
+    next_step,
+    overview,
+    people,
+    pregnancies,
+    public,
+    records,
+    webhooks,
+    work,
+)
 from app.core.config import settings
 from app.core.startup_checks import check_runtime_settings
 
@@ -32,6 +48,9 @@ api_v1.include_router(overview.router)
 api_v1.include_router(caregivers.router)
 api_v1.include_router(work.router)
 api_v1.include_router(public.router)
+api_v1.include_router(messaging.router)
+api_v1.include_router(inbox.router)
+api_v1.include_router(webhooks.router)
 app.include_router(api_v1)
 
 

@@ -60,6 +60,17 @@ def check_runtime_settings(settings: Settings, environ: Mapping[str, str] | None
             "FILE_STORE_BACKEND must be 'supabase' with SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY set"
         )
 
+    # Messaging (SG3): an enabled provider needs every secret, so the webhook
+    # can never run unsigned; and placeholder templates never go to real people.
+    if settings.messaging_provider not in ("disabled", "meta"):
+        problems.append("MESSAGING_PROVIDER must be 'disabled' or 'meta'")
+    if settings.messaging_provider == "meta":
+        for name in ("whatsapp_access_token", "whatsapp_app_secret", "whatsapp_verify_token"):
+            if not getattr(settings, name):
+                problems.append(f"{name.upper()} must be set when MESSAGING_PROVIDER is 'meta'")
+    if settings.messaging_allow_placeholder_templates and settings.env.strip().lower() == "production":
+        problems.append("MESSAGING_ALLOW_PLACEHOLDER_TEMPLATES must be false in production")
+
     if problems:
         raise UnsafeConfigurationError(
             f"Refusing to start with ENV={settings.env.strip()!r}: " + "; ".join(problems)

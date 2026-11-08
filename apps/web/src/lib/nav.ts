@@ -1,4 +1,4 @@
-import { BarChart3, Baby, BookUser, LayoutDashboard, ListChecks, MessageCircle, ShieldCheck, Users, UsersRound, type LucideIcon } from "lucide-react";
+import { BarChart3, Baby, BookUser, Inbox, LayoutDashboard, ListChecks, ShieldCheck, Users, UsersRound, type LucideIcon } from "lucide-react";
 import type { Membership } from "../api/client";
 
 export type StaffRole = "ASHA" | "ANM" | "NURSE" | "COORDINATOR" | "DOCTOR";
@@ -24,10 +24,10 @@ export interface NavItem {
 export const NAV_ITEMS: readonly NavItem[] = [
   { labelKey: "nav.overview", to: "/", icon: LayoutDashboard, group: "work", roles: ALL_ROLES },
   { labelKey: "nav.today", to: "/today", icon: ListChecks, group: "work", roles: ALL_ROLES },
+  { labelKey: "nav.inbox", to: "/inbox", icon: Inbox, group: "work", roles: ALL_ROLES },
   { labelKey: "nav.mothersShort", to: "/mothers", icon: Users, group: "work", roles: ALL_ROLES },
   { labelKey: "nav.workload", to: "/workload", icon: UsersRound, group: "work", roles: ALL_ROLES },
   { labelKey: "nav.contacts", to: "/contacts", icon: BookUser, group: "network", roles: ALL_ROLES },
-  { labelKey: "nav.messages", to: "/messages", icon: MessageCircle, group: "preview", roles: ALL_ROLES, preview: true },
   { labelKey: "nav.children", to: "/children", icon: Baby, group: "preview", roles: ALL_ROLES, preview: true },
   { labelKey: "nav.insights", to: "/insights", icon: BarChart3, group: "preview", roles: ALL_ROLES, preview: true },
 ];
